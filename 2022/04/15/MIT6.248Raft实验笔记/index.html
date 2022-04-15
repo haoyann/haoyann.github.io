@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="Hexo Theme Keep">
+    <meta name="description" content="Hexo Theme Keep">
+    <meta name="author" content="haoyann">
+    
+    <title>
+        
+            MIT 6.248 Raft 实验笔记 |
+        
+        Soul Sacrifice
+    </title>
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <link rel="shortcut icon" href="/images/icons8-study-16.png">
+    
+<link rel="stylesheet" href="/css/font-awesome.min.css">
+
+    <script id="hexo-configurations">
+    let KEEP = window.KEEP || {};
+    KEEP.hexo_config = {"hostname":"example.com","root":"/","language":"en"};
+    KEEP.theme_config = {"toc":{"enable":true,"number":false,"expand_all":true,"init_open":true},"style":{"primary_color":"#0066CC","avatar":"/images/poto.png","favicon":"/images/icons8-study-16.png","article_img_align":"left","left_side_width":"260px","content_max_width":"920px","hover":{"shadow":false,"scale":false},"first_screen":{"enable":true,"background_img":"/images/bg.svg","description":"Keep writing and Keep loving."},"scroll":{"progress_bar":{"enable":false},"percent":{"enable":false}}},"local_search":{"enable":false,"preload":false},"code_copy":{"enable":true,"style":"default"},"pjax":{"enable":false},"lazyload":{"enable":false},"version":"3.4.5"};
+    KEEP.language_ago = {"second":"%s seconds ago","minute":"%s minutes ago","hour":"%s hours ago","day":"%s days ago","week":"%s weeks ago","month":"%s months ago","year":"%s years ago"};
+  </script>
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+<div class="progress-bar-container">
+    
+
+    
+</div>
+
+
+<main class="page-container">
+
+    
+
+    <div class="page-main-content">
+
+        <div class="page-main-content-top">
+            <header class="header-wrapper">
+
+    <div class="header-content">
+        <div class="left">
+            
+            <a class="logo-title" href="/">
+                Soul Sacrifice
+            </a>
+        </div>
+
+        <div class="right">
+            <div class="pc">
+                <ul class="menu-list">
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/"
+                            >
+                                HOME
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/archives"
+                            >
+                                ARCHIVES
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/about"
+                            >
+                                ABOUT
+                            </a>
+                        </li>
+                    
+                    
+                </ul>
+            </div>
+            <div class="mobile">
+                
+                <div class="icon-item menu-bar">
+                    <div class="menu-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list">
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/">HOME</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/archives">ARCHIVES</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/about">ABOUT</a>
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+        </div>
+
+        <div class="page-main-content-middle">
+
+            <div class="main-content">
+
+                
+                    <div class="fade-in-down-animation">
+    <div class="article-content-container">
+
+        <div class="article-title">
+            <span class="title-hover-animation">MIT 6.248 Raft 实验笔记</span>
+        </div>
+
+        
+            <div class="article-header">
+                <div class="avatar">
+                    <img src="/images/poto.png">
+                </div>
+                <div class="info">
+                    <div class="author">
+                        <span class="name">haoyann</span>
+                        
+                            <span class="author-label">Lv1</span>
+                        
+                    </div>
+                    <div class="meta-info">
+                        <div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fas fa-edit"></i>&nbsp;
+        <span class="pc">2022-04-15 00:05:22</span>
+        <span class="mobile">2022-04-15 00:05</span>
+    </span>
+    
+    
+
+    
+    
+        <span class="article-wordcount article-meta-item">
+            <i class="fas fa-file-word"></i>&nbsp;<span>1.9k Words</span>
+        </span>
+    
+    
+        <span class="article-min2read article-meta-item">
+            <i class="fas fa-clock"></i>&nbsp;<span>7 Mins</span>
+        </span>
+    
+    
+</div>
+
+                    </div>
+                </div>
+            </div>
+        
+
+        <div class="article-content markdown-body">
+            <h1 id="MIT-6-248-Raft-实验笔记"><a href="#MIT-6-248-Raft-实验笔记" class="headerlink" title="MIT 6.248 Raft 实验笔记"></a>MIT 6.248 Raft 实验笔记</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>为什么要做 6.248 的 lab2 呢？主要有两个原因，熟悉 go 语言和学习 raft 协议。早在一年前就关注了 6.248 ，由于各种原因一直没有去做 lab，趁现在比较空闲，正好了解一桩心事。</p>
+<p>做为 go 语言的小白，在开始之前花了两天时间熟悉了 go 的语法和并发相关的语法之后就开动了。本文记录了实现过程中的思路和一些细节。</p>
+<h2 id="选举"><a href="#选举" class="headerlink" title="选举"></a>选举</h2><p>2A 的要求是实现 Leader 的选举，整体流程还是比较简单。由于语言的不熟悉，刚开始的时候实现还是比较慢，踩了几个坑之后还算顺利完成了。</p>
+<h4 id="角色定义"><a href="#角色定义" class="headerlink" title="角色定义"></a>角色定义</h4><p>Raft 中有三个角色，跟随者、候选者、领导者。每个角色有自己的职责，如 follower 进行心跳超时检测、候选者进行选举、Leader 负责复制日志和发送心跳。所以很自然的想法是定义raft 角色的三个状态，根据当前角色的做自己的事情，伪代码如下</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 定义集群状态</span></span><br><span class="line"><span class="keyword">type</span> RaftState <span class="type">uint32</span></span><br><span class="line"><span class="keyword">const</span> (</span><br><span class="line">        <span class="comment">// 跟随者</span></span><br><span class="line">        Follower RaftState = <span class="literal">iota</span></span><br><span class="line">        <span class="comment">// 候选者</span></span><br><span class="line">        Candidate</span><br><span class="line">        <span class="comment">// 领导者</span></span><br><span class="line">        Leader</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+
+
+
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(rf *Raft)</span></span> run() &#123;</span><br><span class="line">  <span class="keyword">for</span> rf.killed() == <span class="literal">false</span> &#123;</span><br><span class="line">    <span class="keyword">select</span> &#123;</span><br><span class="line">    <span class="comment">// 集群状态改变通过channel转递</span></span><br><span class="line">    <span class="keyword">case</span> status := &lt;-rf.statusChan:</span><br><span class="line">      <span class="keyword">if</span> status == Follower &#123;</span><br><span class="line">        rf.runFollower()</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> status == Leader &#123;</span><br><span class="line">        rf.runLeader()</span><br><span class="line">      &#125; <span class="keyword">else</span> <span class="keyword">if</span> status == Candidate &#123;</span><br><span class="line">        rf.runCandidate()</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="心跳定时检测"><a href="#心跳定时检测" class="headerlink" title="心跳定时检测"></a>心跳定时检测</h3><p>在论文中 follower 会定时检测是否与 leader 失联，这一部分的实现关键是 follower 与 leader 超时是<strong>随机</strong>的。使用 <code>rand.Seed(time.Now().UnixNano())</code> 设置随机因子，定时任务通过 <code>time.Sleep()</code> 实现，而不是 <code>time.Ticker</code> 这也是在实验 hint 中提到。伪代码如下</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> rf.killed() == <span class="literal">false</span> &#123;</span><br><span class="line">  rand.Seed(time.Now().UnixNano())</span><br><span class="line">  heartbeatTimeout := <span class="type">int64</span>(rf.minHeartbeatTimeout + rand.Intn(rf.maxHeartbeatTimeout-rf.minHeartbeatTimeout))</span><br><span class="line">  <span class="keyword">if</span> duration &gt;= heartbeatTimeout &#123;</span><br><span class="line">    <span class="comment">// change to candidate </span></span><br><span class="line">    <span class="keyword">break</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  time.Sleep(time.Duration(heartbeatTimeout) * time.Millisecond)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="请求投票-RPC"><a href="#请求投票-RPC" class="headerlink" title="请求投票 RPC"></a>请求投票 RPC</h3><p>服务与 leader 心跳超时之后转换为 candidate，开始进行 leader 的选举，直到选举或发现新的 leader 选举流程才会结束。这部分关键的是实现 <code>RequestVote</code> RPC 接口，功能需要按照 Figure 2 中严格实现，以下介绍实现过程中一些需要注意的地方。</p>
+<ol>
+<li><p>所有 RPC 请求的参数和返回值要大写，否则会序列化失败；</p>
+</li>
+<li><p>变量共享并发问题<br>下面代码模拟并发向其他服务发送投票请求的情况，但这段代码是有问题的。在于 变量 i 在新的 goroutine 读取的时候已经被主 goroutine 给修改，导致将请求无法发送给所有的服务。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i := <span class="keyword">range</span> rf.peers &#123;</span><br><span class="line">  <span class="keyword">if</span> i != rf.me &#123;</span><br><span class="line">    <span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">()</span></span> &#123;</span><br><span class="line">      <span class="comment">// 向服务 i 发送投票请求</span></span><br><span class="line">      rf.sendAppendEntries(i, args, reply)</span><br><span class="line">    &#125;()</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>需要使用局部变量传入，避免出现跨 goroutine 之间共享变量的情况。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i := <span class="keyword">range</span> rf.peers &#123;</span><br><span class="line">  <span class="keyword">if</span> i != rf.me &#123;</span><br><span class="line">    <span class="keyword">go</span> <span class="function"><span class="keyword">func</span><span class="params">(serverIndex <span class="type">int</span>)</span></span> &#123;</span><br><span class="line">      rf.sendAppendEntries(serverIndex, args, reply)</span><br><span class="line">    &#125;(i)</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>RPC 超时<br>需要注意的一点，所有的 RPC 请求都有可能超时和乱序，这里先只考虑超时的问题，乱序处理后面会提到。因为存在超时问题，在选举过程中不能等待所有的 RPC 请求返回之后再做处理。正确的方式应该为在发起 RPC 请求之前启动一个超时器，如果超时器已经生效但是还没有选举出 leader 将开启下一轮的选举。</p>
+</li>
+<li><p>选举终止<br>在论文中提到过，一轮选举会有三种情况</p>
+<ul>
+<li>获取半数以上节点，自身当选为 leader；</li>
+<li>其他节点晋升为 leader；</li>
+<li>选举超时<br>那么在代码层面怎么实现这三个 case 呢？可以使用 <code>sync.Cond</code> 或 select 来实现，本人采用的是用     select 来实现，使用如下：<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span> &#123;</span><br><span class="line"><span class="keyword">case</span> &lt;-selfLeader:</span><br><span class="line">  <span class="comment">// become leader</span></span><br><span class="line"><span class="keyword">case</span> term := &lt;-otherLeader:</span><br><span class="line">  <span class="comment">// change to follower</span></span><br><span class="line"><span class="keyword">case</span> &lt;-timeoutChan:</span><br><span class="line">  <span class="comment">// next vote</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+</ol>
+<h2 id="附加日志"><a href="#附加日志" class="headerlink" title="附加日志"></a>附加日志</h2><p>日志复制实现 2B 的内容，个人认为是lab 中最难的部分，论文中任何细节都不能放过，否则即使 2B 的 case 通过了，在 2C 中大概率会失败，魔鬼在细节中。</p>
+<ul>
+<li><p>日志结构</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">type</span> Log <span class="keyword">struct</span> &#123;</span><br><span class="line">  Term  <span class="type">int</span></span><br><span class="line">  Index <span class="type">int</span></span><br><span class="line">  Cmd   <span class="keyword">interface</span>&#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>日志包含三个部分 Term、Index、Cmd。日志使用 slice 存储，正常情况下 <code>log[n].Index = n</code> 似乎可以使用 slice 的下标代替 Index 属性。但是在 2D 快照实现中会截断日志，此时 <code>log[n].Index != n</code> 。还有一个建议是日志从 log[1] 开始，在 2D 的时候用 log[0] 存放快照的 Term 和 Index。</p>
+</li>
+<li><p>日志应用到状态机</p>
+<p>日志 commit 之后需要应用到状态机，lab 中通过将日志发送到 channel <code>ApplyMsg</code>  实现。当 <code>lastApplied &lt; commitIndex</code> 时候开始应用到状态机。</p>
+</li>
+<li><p>日志覆盖原则</p>
+<p>leader 通过覆盖日志的形式让 follower 的日志保持一致。如果 follower 存在的日志与 leader 发送的日志发生了冲突，follower会删除该日志及其之后的日志。<br>这里的 if 相当关键，如果 leader 发送的日志在follower 上已经存在但是并没有冲突，就不要覆盖日志，应用未存在的新日志即可。</p>
+</li>
+<li><p>matchIndex 与 nextIndex</p>
+<p>在网络正常的情况下 <code>matchIndex[n] = nextIndex[n]-1</code> ，但是不能用 nextIndex 替代 matchIndex。nextIndex 表示发送下一条日志索引是可以回退的，而 matchIndex 表示已经复制到 follower 上最高的日志索引在同一个任期内是不能回退的。使用 matchIndex 来确认 commitIndex 的位置。</p>
+</li>
+<li><p>快速跳过 next index</p>
+<p>论文中提到一个优化策略，当 follower 与 leader 日志冲突过多的时候，可以通过 follower 返回冲突日志的 term 和该 term 对应最小的index，leader 可以通过这些信息一次请求可以跨过一个 term 来快速解决日志冲突。</p>
+</li>
+<li><p>不能提交之前任期的日志</p>
+<p>这是 Figure 8 所提到的内容，leader 只能提交当前任期日志不能提交之前任期的日志。在提交日志的时候除了日志应用到大多数节点之外，还需要 <code>log[N].term == currentTerm</code> 成立。</p>
+</li>
+</ul>
+<h2 id="持久化"><a href="#持久化" class="headerlink" title="持久化"></a>持久化</h2><p>对于 2C 的内容，需要将 Figure 2 中提到的 currentTerm、votedFor、log[] 这三个属性在变动之后都要进行持久化。本身不难，主要是 case 会比 2B 更严格，测试需要多跑几次，可以借助脚本 <a class="link"   target="_blank" rel="noopener" href="https://gist.github.com/jonhoo/f686cacb4b9fe716d5aa" >go-test-many.sh<i class="fas fa-external-link-alt"></i></a> 进行批量测试。</p>
+<h2 id="RPC-乱序处理"><a href="#RPC-乱序处理" class="headerlink" title="RPC 乱序处理"></a>RPC 乱序处理</h2><ol>
+<li>对于所有 RPC 请求都适用，如果请求响应之后需要判断 currentTerm &#x3D;&#x3D; arg.trem 并且服务角色没有变动才进行下一步修改；</li>
+<li>附加日志 RPC 响应成功更改 nextIndex 时需要判断 nextIndex &gt; matchIndex，因为可能是过期的响应返回;</li>
+<li>附加日志接收端的乱序的处理，参考上文提到的<code>日志覆盖原则</code>；</li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>前前后后花了半个月时间总算完成了 lab，总的来说收获很大，主要在对 raft 认知上，go 语言掌握依然很烂。以前看过 raft 的论文，只是了解大体的流程，真正实现的时候才发现有很多细节每一个 if 、and 都相当关键。在实现之前先遇堵<a class="link"   target="_blank" rel="noopener" href="https://thesquareplanet.com/blog/students-guide-to-raft/" >学生导读<i class="fas fa-external-link-alt"></i></a>可以少踩很多坑。</p>
+
+        </div>
+
+        
+
+        
+
+        
+
+        
+            <div class="comment-container">
+                <div class="comments-container">
+    <div id="comment-anchor"></div>
+    <div class="comment-area-title">
+        <i class="fas fa-comments">&nbsp;Comments</i>
+    </div>
+    
+
+        
+            
+
+
+        
+    
+</div>
+
+            </div>
+        
+    </div>
+</div>
+
+
+                
+            </div>
+
+        </div>
+
+        <div class="page-main-content-bottom">
+            <footer class="footer">
+    <div class="info-container">
+        <div class="copyright-info info-item">
+            &copy;
+            
+              <span>2020</span>
+              -
+            
+            2022&nbsp;<i class="fas fa-heart icon-animate"></i>&nbsp;<a href="/">haoyann</a>
+        </div>
+        
+        <div class="theme-info info-item">
+            Powered by <a target="_blank" href="https://hexo.io">Hexo</a>&nbsp;|&nbsp;Theme&nbsp;<a class="theme-version" target="_blank" href="https://github.com/XPoet/hexo-theme-keep">Keep v3.4.5</a>
+        </div>
+        
+        
+    </div>
+</footer>
+
+        </div>
+    </div>
+
+    
+        <div class="post-tools">
+            <div class="post-tools-container">
+    <ul class="tools-list">
+        <!-- TOC aside toggle -->
+        
+            <li class="tools-item page-aside-toggle">
+                <i class="fas fa-outdent"></i>
+            </li>
+        
+
+        <!-- go comment -->
+        
+            <li class="go-comment">
+                <i class="fas fa-comment"></i>
+            </li>
+        
+    </ul>
+</div>
+
+        </div>
+    
+
+    <div class="right-bottom-side-tools">
+        <div class="side-tools-container">
+    <ul class="side-tools-list">
+        <li class="tools-item tool-font-adjust-plus flex-center">
+            <i class="fas fa-search-plus"></i>
+        </li>
+
+        <li class="tools-item tool-font-adjust-minus flex-center">
+            <i class="fas fa-search-minus"></i>
+        </li>
+
+        <li class="tools-item tool-expand-width flex-center">
+            <i class="fas fa-arrows-alt-h"></i>
+        </li>
+
+        <li class="tools-item tool-dark-light-toggle flex-center">
+            <i class="fas fa-moon"></i>
+        </li>
+
+        <!-- rss -->
+        
+
+        
+            <li class="tools-item tool-scroll-to-top flex-center">
+                <i class="fas fa-arrow-up"></i>
+            </li>
+        
+
+        <li class="tools-item tool-scroll-to-bottom flex-center">
+            <i class="fas fa-arrow-down"></i>
+        </li>
+    </ul>
+
+    <ul class="exposed-tools-list">
+        <li class="tools-item tool-toggle-show flex-center">
+            <i class="fas fa-cog fa-spin"></i>
+        </li>
+        
+    </ul>
+</div>
+
+    </div>
+
+    
+        <aside class="page-aside">
+            <div class="post-toc-wrap">
+    <div class="post-toc">
+        <ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#MIT-6-248-Raft-%E5%AE%9E%E9%AA%8C%E7%AC%94%E8%AE%B0"><span class="nav-text">MIT 6.248 Raft 实验笔记</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%83%8C%E6%99%AF"><span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%80%89%E4%B8%BE"><span class="nav-text">选举</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%A7%92%E8%89%B2%E5%AE%9A%E4%B9%89"><span class="nav-text">角色定义</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BF%83%E8%B7%B3%E5%AE%9A%E6%97%B6%E6%A3%80%E6%B5%8B"><span class="nav-text">心跳定时检测</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%B7%E6%B1%82%E6%8A%95%E7%A5%A8-RPC"><span class="nav-text">请求投票 RPC</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%99%84%E5%8A%A0%E6%97%A5%E5%BF%97"><span class="nav-text">附加日志</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8C%81%E4%B9%85%E5%8C%96"><span class="nav-text">持久化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RPC-%E4%B9%B1%E5%BA%8F%E5%A4%84%E7%90%86"><span class="nav-text">RPC 乱序处理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-text">总结</span></a></li></ol></li></ol>
+    </div>
+</div>
+        </aside>
+    
+
+    <div class="image-viewer-container">
+    <img src="">
+</div>
+
+
+    
+
+</main>
+
+
+
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/main.js"></script>
+
+<script src="/js/header-shrink.js"></script>
+
+<script src="/js/back2top.js"></script>
+
+<script src="/js/dark-light-toggle.js"></script>
+
+
+
+
+
+    
+<script src="/js/code-copy.js"></script>
+
+
+
+
+
+<div class="post-scripts">
+    
+        
+<script src="/js/left-side-toggle.js"></script>
+
+<script src="/js/libs/anime.min.js"></script>
+
+<script src="/js/toc.js"></script>
+
+    
+</div>
+
+
+
+</body>
+</html>
