@@ -241,7 +241,7 @@
 <li>附加日志 RPC 响应成功更改 nextIndex 时需要判断 nextIndex &gt; matchIndex，因为可能是过期的响应返回;</li>
 <li>附加日志接收端的乱序的处理，参考上文提到的<code>日志覆盖原则</code>；</li>
 </ol>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>前前后后花了半个月时间总算完成了 lab，总的来说收获很大，主要在对 raft 认知上，go 语言掌握依然很烂。以前看过 raft 的论文，只是了解大体的流程，真正实现的时候才发现有很多细节每一个 if 、and 都相当关键。在实现之前先遇堵<a class="link"   target="_blank" rel="noopener" href="https://thesquareplanet.com/blog/students-guide-to-raft/" >学生导读<i class="fas fa-external-link-alt"></i></a>可以少踩很多坑。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>前前后后花了半个月时间总算完成了 lab，总的来说收获很大，主要在对 raft 认知上，go 语言掌握依然很烂。以前看过 raft 的论文，只是了解大体的流程，真正实现的时候才发现有很多细节每一个 if 、and 都相当关键。在实现之前先阅读<a class="link"   target="_blank" rel="noopener" href="https://thesquareplanet.com/blog/students-guide-to-raft/" >学生导读<i class="fas fa-external-link-alt"></i></a>可以少踩很多坑。</p>
 
         </div>
 
