@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="Hexo Theme Keep">
+    <meta name="description" content="Hexo Theme Keep">
+    <meta name="author" content="haoyann">
+    
+    <title>
+        
+            Raft相关优化 |
+        
+        Soul Sacrifice
+    </title>
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <link rel="shortcut icon" href="/images/icons8-study-16.png">
+    
+<link rel="stylesheet" href="/css/font-awesome.min.css">
+
+    <script id="hexo-configurations">
+    let KEEP = window.KEEP || {};
+    KEEP.hexo_config = {"hostname":"example.com","root":"/","language":"en"};
+    KEEP.theme_config = {"toc":{"enable":true,"number":false,"expand_all":true,"init_open":true},"style":{"primary_color":"#0066CC","avatar":"/images/poto.png","favicon":"/images/icons8-study-16.png","article_img_align":"left","left_side_width":"260px","content_max_width":"920px","hover":{"shadow":false,"scale":false},"first_screen":{"enable":true,"background_img":"/images/bg.svg","description":"Keep writing and Keep loving."},"scroll":{"progress_bar":{"enable":false},"percent":{"enable":false}}},"local_search":{"enable":false,"preload":false},"code_copy":{"enable":true,"style":"default"},"pjax":{"enable":false},"lazyload":{"enable":false},"version":"3.4.5"};
+    KEEP.language_ago = {"second":"%s seconds ago","minute":"%s minutes ago","hour":"%s hours ago","day":"%s days ago","week":"%s weeks ago","month":"%s months ago","year":"%s years ago"};
+  </script>
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+<div class="progress-bar-container">
+    
+
+    
+</div>
+
+
+<main class="page-container">
+
+    
+
+    <div class="page-main-content">
+
+        <div class="page-main-content-top">
+            <header class="header-wrapper">
+
+    <div class="header-content">
+        <div class="left">
+            
+            <a class="logo-title" href="/">
+                Soul Sacrifice
+            </a>
+        </div>
+
+        <div class="right">
+            <div class="pc">
+                <ul class="menu-list">
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/"
+                            >
+                                HOME
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/archives"
+                            >
+                                ARCHIVES
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/about"
+                            >
+                                ABOUT
+                            </a>
+                        </li>
+                    
+                    
+                </ul>
+            </div>
+            <div class="mobile">
+                
+                <div class="icon-item menu-bar">
+                    <div class="menu-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list">
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/">HOME</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/archives">ARCHIVES</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/about">ABOUT</a>
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+        </div>
+
+        <div class="page-main-content-middle">
+
+            <div class="main-content">
+
+                
+                    <div class="fade-in-down-animation">
+    <div class="article-content-container">
+
+        <div class="article-title">
+            <span class="title-hover-animation">Raft相关优化</span>
+        </div>
+
+        
+            <div class="article-header">
+                <div class="avatar">
+                    <img src="/images/poto.png">
+                </div>
+                <div class="info">
+                    <div class="author">
+                        <span class="name">haoyann</span>
+                        
+                            <span class="author-label">Lv1</span>
+                        
+                    </div>
+                    <div class="meta-info">
+                        <div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fas fa-edit"></i>&nbsp;
+        <span class="pc">2022-04-27 19:53:08</span>
+        <span class="mobile">2022-04-27 19:53</span>
+    </span>
+    
+    
+
+    
+    
+        <span class="article-wordcount article-meta-item">
+            <i class="fas fa-file-word"></i>&nbsp;<span>1.9k Words</span>
+        </span>
+    
+    
+        <span class="article-min2read article-meta-item">
+            <i class="fas fa-clock"></i>&nbsp;<span>6 Mins</span>
+        </span>
+    
+    
+</div>
+
+                    </div>
+                </div>
+            </div>
+        
+
+        <div class="article-content markdown-body">
+            <h1 id="Raft-相关优化"><a href="#Raft-相关优化" class="headerlink" title="Raft 相关优化"></a>Raft 相关优化</h1><p>Raft 算法的一个重要特性便是易于理解和实现。随着对Raft 的深入了解和参考一些工程上的实现，发现实现一个稳定、高性能的Raft算法其实并不简单，许多论文中一笔带过的优化在实现中都是需要考虑的。本文做 Raft 实现的相关优化做一个总结，只是个人学习的一个记录并不能覆盖所有的情况。</p>
+<h2 id="预投票"><a href="#预投票" class="headerlink" title="预投票"></a>预投票</h2><p>在了解预投票之前先看下面一个场景。</p>
+<p>下图描述的情况为：在节点 A、B、C 三个服务组成 raft 集群，节点 A 在term 1当选为 leader。某一时刻发生网络分区，将网络划分为 [A，B]、[C]，节点 C 将会接受不到 leader A 的请求。节点 C 心跳超时之后发起选举请求 ，由于网络分区的存在，选举也会超时然后触发下一轮的选举。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/haoyann/img-folder@master/raft%E9%80%89%E4%B8%BE.57e5nsqxkzc.webp"></p>
+<p>假如后面网络恢复了，节点 C 能够将投票请求发送给 A、B 节点，A节点发现 C 的term比自身高将会降级成 follower并更新自身的 term。这将会导致集群leader不稳定并会太高整个集群的 term。</p>
+<p>为了避免上诉情况的发生，可以采用预投票的方法处理。所谓预投票就是发送起请求请求之前先发起预投票（pre-vote），如果没有得到半数以上节点的反馈将不会发起投票选举。</p>
+<p>但是预投票能处理所有的破坏集群稳定性的情况吗？以下举了两个例子</p>
+<ol>
+<li><p>上面描述发生网络分区的情况，节点 C 与节点A、B 都不能通讯，使用预投票可以处理这种场景，但是如果节点 C 与A不能通讯与 B 能够通讯呢？也会破坏集群的稳定性。</p>
+</li>
+<li><p>在发生更改集群配置的情况下，一旦Leader创建了 Cnew 条目，不在 Cnew 中的服务器将不再接收心跳信号，因此它将超时并开始新的选举，这将导致当前的领导者转为跟随者状态。</p>
+</li>
+</ol>
+<p>所以为了保障集群的稳定性在预投票基础上还可以使用另外一种方式优化，即当服务能够确定集群中 leader 是有效存在的将会拒绝投票请求也不会更新自身的任期。对于 follower 如果在选举超时的最小周期内接受到了 leader 心跳便认为是集群中leader是有效的，拒绝选举请求，对于 leader 通过追踪和follower的心跳状态来确定自己是否有效。</p>
+<h2 id="读优化"><a href="#读优化" class="headerlink" title="读优化"></a>读优化</h2><p>读操作不会改变状态机，很自然的优化想法是读操作不生成 Log，但如果直接读取状态机的数据并不能保证线性读，即在一个写请求完成之后对于之后的读请求都是可见的。既要保证读请求的线性一致还需要满足读请求的高性能，主要有两种优化方式 ReadIndex 和  LeaseRead。</p>
+<h3 id="ReadIndex"><a href="#ReadIndex" class="headerlink" title="ReadIndex"></a>ReadIndex</h3><p>ReadIndex 操作并不会生成日志，因此会减少磁盘和网络 IO。Leader 执行 ReadIndex基本流程如下：</p>
+<ol>
+<li><p>记录当前的 commit index，存入局部变量 ReadIndex；</p>
+</li>
+<li><p>向 follower 发起一次心跳，如果大多数节点回复了，那就能确定现在仍然是 leader；</p>
+</li>
+<li><p>等待状态机至少应用到 readIndex 记录的 log；</p>
+</li>
+<li><p>执行读请求，将结果返回给 client；</p>
+</li>
+</ol>
+<h3 id="LeaseRead"><a href="#LeaseRead" class="headerlink" title="LeaseRead"></a>LeaseRead</h3><p>LeaseRead 与 ReadIndex 相似，不过比 ReadIndex 少去了向 follower 发送心跳确认自己 leader，减少了一步网络 IO。基本的思路是一旦集群的大多数成员都认可了领导者的心跳，取一个比Election Timeout 小的租期，在租期内集群中不会发生选举，leader 不会发生改变，可以跳过上诉第 2 步。LeaseRead 的形式依赖本地时钟，如果发生时钟漂移可能返回过期的信息。</p>
+<p>另外ReadIndex 和  LeaseRead 都可以在 follower 上执行，分担 leader 的读压力。基本流程如下：</p>
+<ol>
+<li><p>follower 接受到读请求；</p>
+</li>
+<li><p>follower 请求leader 获取 readindex变量；</p>
+</li>
+<li><p>等待状态机至少应用到 readIndex 记录的 log；</p>
+</li>
+<li><p>执行读请求，将结果返回给 client；</p>
+</li>
+</ol>
+<h2 id="No-op日志"><a href="#No-op日志" class="headerlink" title="No-op日志"></a>No-op日志</h2><p>在论文 Figure 8 中提到 leader 不能直接提交之前任期的日志，即使日志已经复制到集群大多数节点。leader 只能提交当前任期的日志，通过日志匹配的特性间接提交之前任期的日志。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/haoyann/img-folder@master/raft%E6%97%A5%E5%BF%97.943jf65yv5o.webp"></p>
+<p>此特性会带来一些比较诡异的现象，如上图的描述：</p>
+<ol>
+<li><p>集群中有三个服务 A、B、C，其中服务 A 担任任期编号 1 的leader；</p>
+</li>
+<li><p>客户端发起一个写入请求，leader 处理客户端请求在 index 为2的地方生成一条日志；</p>
+</li>
+<li><p>leader 将index 为 2 的日志复制服务C，日志还没来得及提交服务变挂掉了；</p>
+</li>
+<li><p>服务 C 获取B、C选票成为 任期 2 的 leader，将index为2的日志复制到了服务B，由于日志安全限制不能提交 index 为 2 的日志；</p>
+</li>
+<li><p>客户端由于服务 A 长时间未响应请求超时，假设客户端有重试逻辑，先查询请求确认写入的数据是否存在，由于之前写入的日志未提交，客户端不会查询出上一次的写入结果，将重新写入，服务端便会存在重复的数据。</p>
+</li>
+</ol>
+<p>此问题可以用no-op 日志解决，所谓no-op 日志是只有 index 和 term 的日志。在 leader 选举成功之后提交一条 no-op 日志，通过 no-op 日志间接提交之前任期的日志。</p>
+<p>当然 no-op 日志还不止解决这个问题，在集群变更的时候 no-op 日志也有重要作用，具体的可以看 <a class="link"   target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/359465710"  title="Raft 成员变更的工程实践">Raft 成员变更的工程实践<i class="fas fa-external-link-alt"></i></a> 的Raft单步成员变更的问题部分。</p>
+<h2 id="写入优化"><a href="#写入优化" class="headerlink" title="写入优化"></a>写入优化</h2><p>日志的可以简单分为以下流程：</p>
+<ol>
+<li><p>leader 接受到请求，生成日志持久化到本地；</p>
+</li>
+<li><p>leader 并发的将日志复制给 follower；</p>
+</li>
+<li><p>follower 将日志持久化到本地；</p>
+</li>
+<li><p>集群中半数节点持久化日志之后，apply 日志，leader响应客户端；</p>
+</li>
+</ol>
+<p>可以看到写入一条日志涉及到的磁盘和网络IO都是比较多的，想要达到写入的高性能可以针对写入流程做以下优化：</p>
+<ol>
+<li><p>Batch：如果每条日志都单独持久化和复制给 follower 成本太高了，可以将日志批量持久化和复制；</p>
+</li>
+<li><p>Pipeline：leader 发送给 follower 日志数据通过 next index 维护，这种情况下 leader 不需要等待客户端的响应结果即可复制下一批日志，因此可以采用 pipeline的形式进行日志复制。即使发生日志不匹配需要回退 next index 的情况 pipeline 也可以处理；</p>
+</li>
+<li><p>Asynchronous：可以将leader 将日志持久化到本地和日志复制并行处理，只要大多数节点将日志持久化之后便可以将日志 commit；</p>
+</li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>本文列举了一些 raft 常见的优化形式，Batch和Asynchronous都是常见的优化手段，但如何在Batch的时候不影响响应时间是需要思考的，具体的细节还需要看工程项目是怎么做的。关于 Pipeline 如果使用 gRPC 做为服务直接的通讯使用 Stream 就能实现。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><p><a class="link"   target="_blank" rel="noopener" href="https://pingcap.com/zh/blog/optimizing-raft-in-tikv"  title="TiKV 功能介绍 - Raft 的优化">TiKV 功能介绍 - Raft 的优化<i class="fas fa-external-link-alt"></i></a></p>
+</li>
+<li><p><a class="link"   target="_blank" rel="noopener" href="https://www.sofastack.tech/blog/sofa-jraft-deep-dive"  title="蚂蚁金服开源 SOFAJRaft 详解| 生产级高性能 Java 实现">蚂蚁金服开源 SOFAJRaft 详解| 生产级高性能 Java 实现<i class="fas fa-external-link-alt"></i></a></p>
+</li>
+</ul>
+
+        </div>
+
+        
+
+        
+
+        
+            <div class="article-nav">
+                
+                
+                    <div class="article-next">
+                        <a class="next"
+                           rel="next"
+                           href="/2022/04/15/MIT6.248Raft%E5%AE%9E%E9%AA%8C%E7%AC%94%E8%AE%B0/"
+                        >
+                            <span class="title flex-center">
+                                <span class="post-nav-title-item">MIT 6.248 Raft 实验笔记</span>
+                                <span class="post-nav-item">Next posts</span>
+                            </span>
+                            <span class="right arrow-icon flex-center">
+                              <i class="fas fa-chevron-right"></i>
+                            </span>
+                        </a>
+                    </div>
+                
+            </div>
+        
+
+        
+            <div class="comment-container">
+                <div class="comments-container">
+    <div id="comment-anchor"></div>
+    <div class="comment-area-title">
+        <i class="fas fa-comments">&nbsp;Comments</i>
+    </div>
+    
+
+        
+            
+
+
+        
+    
+</div>
+
+            </div>
+        
+    </div>
+</div>
+
+
+                
+            </div>
+
+        </div>
+
+        <div class="page-main-content-bottom">
+            <footer class="footer">
+    <div class="info-container">
+        <div class="copyright-info info-item">
+            &copy;
+            
+              <span>2020</span>
+              -
+            
+            2022&nbsp;<i class="fas fa-heart icon-animate"></i>&nbsp;<a href="/">haoyann</a>
+        </div>
+        
+        <div class="theme-info info-item">
+            Powered by <a target="_blank" href="https://hexo.io">Hexo</a>&nbsp;|&nbsp;Theme&nbsp;<a class="theme-version" target="_blank" href="https://github.com/XPoet/hexo-theme-keep">Keep v3.4.5</a>
+        </div>
+        
+        
+    </div>
+</footer>
+
+        </div>
+    </div>
+
+    
+        <div class="post-tools">
+            <div class="post-tools-container">
+    <ul class="tools-list">
+        <!-- TOC aside toggle -->
+        
+            <li class="tools-item page-aside-toggle">
+                <i class="fas fa-outdent"></i>
+            </li>
+        
+
+        <!-- go comment -->
+        
+            <li class="go-comment">
+                <i class="fas fa-comment"></i>
+            </li>
+        
+    </ul>
+</div>
+
+        </div>
+    
+
+    <div class="right-bottom-side-tools">
+        <div class="side-tools-container">
+    <ul class="side-tools-list">
+        <li class="tools-item tool-font-adjust-plus flex-center">
+            <i class="fas fa-search-plus"></i>
+        </li>
+
+        <li class="tools-item tool-font-adjust-minus flex-center">
+            <i class="fas fa-search-minus"></i>
+        </li>
+
+        <li class="tools-item tool-expand-width flex-center">
+            <i class="fas fa-arrows-alt-h"></i>
+        </li>
+
+        <li class="tools-item tool-dark-light-toggle flex-center">
+            <i class="fas fa-moon"></i>
+        </li>
+
+        <!-- rss -->
+        
+
+        
+            <li class="tools-item tool-scroll-to-top flex-center">
+                <i class="fas fa-arrow-up"></i>
+            </li>
+        
+
+        <li class="tools-item tool-scroll-to-bottom flex-center">
+            <i class="fas fa-arrow-down"></i>
+        </li>
+    </ul>
+
+    <ul class="exposed-tools-list">
+        <li class="tools-item tool-toggle-show flex-center">
+            <i class="fas fa-cog fa-spin"></i>
+        </li>
+        
+    </ul>
+</div>
+
+    </div>
+
+    
+        <aside class="page-aside">
+            <div class="post-toc-wrap">
+    <div class="post-toc">
+        <ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Raft-%E7%9B%B8%E5%85%B3%E4%BC%98%E5%8C%96"><span class="nav-text">Raft 相关优化</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A2%84%E6%8A%95%E7%A5%A8"><span class="nav-text">预投票</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%BB%E4%BC%98%E5%8C%96"><span class="nav-text">读优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ReadIndex"><span class="nav-text">ReadIndex</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LeaseRead"><span class="nav-text">LeaseRead</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#No-op%E6%97%A5%E5%BF%97"><span class="nav-text">No-op日志</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99%E5%85%A5%E4%BC%98%E5%8C%96"><span class="nav-text">写入优化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-text">参考</span></a></li></ol></li></ol>
+    </div>
+</div>
+        </aside>
+    
+
+    <div class="image-viewer-container">
+    <img src="">
+</div>
+
+
+    
+
+</main>
+
+
+
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/main.js"></script>
+
+<script src="/js/header-shrink.js"></script>
+
+<script src="/js/back2top.js"></script>
+
+<script src="/js/dark-light-toggle.js"></script>
+
+
+
+
+
+    
+<script src="/js/code-copy.js"></script>
+
+
+
+
+
+<div class="post-scripts">
+    
+        
+<script src="/js/left-side-toggle.js"></script>
+
+<script src="/js/libs/anime.min.js"></script>
+
+<script src="/js/toc.js"></script>
+
+    
+</div>
+
+
+
+</body>
+</html>
