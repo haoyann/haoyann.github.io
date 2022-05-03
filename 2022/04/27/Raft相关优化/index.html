@@ -195,7 +195,7 @@
 <h2 id="预投票"><a href="#预投票" class="headerlink" title="预投票"></a>预投票</h2><p>在了解预投票之前先看下面一个场景。</p>
 <p>下图描述的情况为：在节点 A、B、C 三个服务组成 raft 集群，节点 A 在term 1当选为 leader。某一时刻发生网络分区，将网络划分为 [A，B]、[C]，节点 C 将会接受不到 leader A 的请求。节点 C 心跳超时之后发起选举请求 ，由于网络分区的存在，选举也会超时然后触发下一轮的选举。</p>
 <p><img src="https://cdn.jsdelivr.net/gh/haoyann/img-folder@master/raft%E9%80%89%E4%B8%BE.57e5nsqxkzc.webp"></p>
-<p>假如后面网络恢复了，节点 C 能够将投票请求发送给 A、B 节点，A节点发现 C 的term比自身高将会降级成 follower并更新自身的 term。这将会导致集群leader不稳定并会太高整个集群的 term。</p>
+<p>假如后面网络恢复了，节点 C 能够将投票请求发送给 A、B 节点，A节点发现 C 的term比自身高将会降级成 follower并更新自身的 term。这将会导致集群leader不稳定并会抬高整个集群的 term。</p>
 <p>为了避免上诉情况的发生，可以采用预投票的方法处理。所谓预投票就是发送起请求请求之前先发起预投票（pre-vote），如果没有得到半数以上节点的反馈将不会发起投票选举。</p>
 <p>但是预投票能处理所有的破坏集群稳定性的情况吗？以下举了两个例子</p>
 <ol>
