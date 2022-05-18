@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="Hexo Theme Keep">
+    <meta name="description" content="Hexo Theme Keep">
+    <meta name="author" content="haoyann">
+    
+    <title>
+        
+            Nacos 长连接推送模型解析 |
+        
+        Soul Sacrifice
+    </title>
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <link rel="shortcut icon" href="/images/icons8-study-16.png">
+    
+<link rel="stylesheet" href="/css/font-awesome.min.css">
+
+    <script id="hexo-configurations">
+    let KEEP = window.KEEP || {};
+    KEEP.hexo_config = {"hostname":"example.com","root":"/","language":"en"};
+    KEEP.theme_config = {"toc":{"enable":true,"number":false,"expand_all":true,"init_open":true},"style":{"primary_color":"#0066CC","avatar":"/images/poto.png","favicon":"/images/icons8-study-16.png","article_img_align":"left","left_side_width":"260px","content_max_width":"920px","hover":{"shadow":false,"scale":false},"first_screen":{"enable":true,"background_img":"/images/bg.svg","description":"Keep writing and Keep loving."},"scroll":{"progress_bar":{"enable":false},"percent":{"enable":false}}},"local_search":{"enable":false,"preload":false},"code_copy":{"enable":true,"style":"default"},"pjax":{"enable":false},"lazyload":{"enable":false},"version":"3.4.5"};
+    KEEP.language_ago = {"second":"%s seconds ago","minute":"%s minutes ago","hour":"%s hours ago","day":"%s days ago","week":"%s weeks ago","month":"%s months ago","year":"%s years ago"};
+  </script>
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+<div class="progress-bar-container">
+    
+
+    
+</div>
+
+
+<main class="page-container">
+
+    
+
+    <div class="page-main-content">
+
+        <div class="page-main-content-top">
+            <header class="header-wrapper">
+
+    <div class="header-content">
+        <div class="left">
+            
+            <a class="logo-title" href="/">
+                Soul Sacrifice
+            </a>
+        </div>
+
+        <div class="right">
+            <div class="pc">
+                <ul class="menu-list">
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/"
+                            >
+                                HOME
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/archives"
+                            >
+                                ARCHIVES
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/about"
+                            >
+                                ABOUT
+                            </a>
+                        </li>
+                    
+                    
+                </ul>
+            </div>
+            <div class="mobile">
+                
+                <div class="icon-item menu-bar">
+                    <div class="menu-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list">
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/">HOME</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/archives">ARCHIVES</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/about">ABOUT</a>
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+        </div>
+
+        <div class="page-main-content-middle">
+
+            <div class="main-content">
+
+                
+                    <div class="fade-in-down-animation">
+    <div class="article-content-container">
+
+        <div class="article-title">
+            <span class="title-hover-animation">Nacos 长连接推送模型解析</span>
+        </div>
+
+        
+            <div class="article-header">
+                <div class="avatar">
+                    <img src="/images/poto.png">
+                </div>
+                <div class="info">
+                    <div class="author">
+                        <span class="name">haoyann</span>
+                        
+                            <span class="author-label">Lv1</span>
+                        
+                    </div>
+                    <div class="meta-info">
+                        <div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fas fa-edit"></i>&nbsp;
+        <span class="pc">2022-05-18 11:18:48</span>
+        <span class="mobile">2022-05-18 11:18</span>
+    </span>
+    
+    
+        <span class="article-tags article-meta-item">
+            <i class="fas fa-tags"></i>&nbsp;
+            <ul>
+                
+                    <li>
+                        <a href="/tags/Nacos/">Nacos</a>&nbsp;
+                    </li>
+                
+            </ul>
+        </span>
+    
+
+    
+    
+        <span class="article-wordcount article-meta-item">
+            <i class="fas fa-file-word"></i>&nbsp;<span>2.4k Words</span>
+        </span>
+    
+    
+        <span class="article-min2read article-meta-item">
+            <i class="fas fa-clock"></i>&nbsp;<span>8 Mins</span>
+        </span>
+    
+    
+</div>
+
+                    </div>
+                </div>
+            </div>
+        
+
+        <div class="article-content markdown-body">
+            <p>Nacos 2.0 使用 gRPC 代替 1.x 版本的 HTTP 短链接模型，实现服务注册、监听、心跳上报等功能，对比 1.x 的版本性能提升了10倍 ，相关 <a class="link"   target="_blank" rel="noopener" href="https://nacos.io/zh-cn/blog/performance-compare.html"  title="压测报告">压测报告<i class="fas fa-external-link-alt"></i></a>。本文尝试解析 Nacos 2.0 架构的注册和推送模型以及对 gRPC 连接的管理，本文只分析 naming 模块的内容， config 以及其他模块暂不涉及。</p>
+<h3 id="什么是gRPC"><a href="#什么是gRPC" class="headerlink" title="什么是gRPC"></a>什么是gRPC</h3><p>gRPC 是 Google 开源的一个基于 HTTP 2 协议的 RPC 框架，使用 Protocol buffers 定义服务，具有丰富的请求—响应模型，如 unary RPC、Server-side streaming RPC、Client-side streaming RPC 和 Bidirectional streaming RPC。</p>
+<p>Nacos 定义了两个 rpc 方法，分别是 unary RPC 类型的 <code>Request</code> 和 Bidirectional streaming RPC 类型的 <code>BiRequestStream</code> 。<code>Request</code> 方法用于业务请求如服务查询、服务注册、服务订阅等与业务属性相关的请求，而 <code>BiRequestStream</code> 用与连接的管理，这里的连接是 Nacos 内部的概念后文会提到。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"> service Request &#123;</span><br><span class="line">  // Sends a commonRequest</span><br><span class="line">  rpc request (Payload) returns (Payload) &#123;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">service BiRequestStream &#123;</span><br><span class="line">  // Sends a commonRequest</span><br><span class="line">  rpc requestBiStream (stream Payload) returns (stream Payload) &#123;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="基础模型"><a href="#基础模型" class="headerlink" title="基础模型"></a>基础模型</h3><p>使用 gRPC 做为客户端与服务端的通讯协议之后，客户端的所有请求如注册、订阅都是通过同一个连接与同一个服务端进行通讯。服务端需要对客户端连接和通过该连接注册的数据进行管理，因此抽象出了<code>Connection</code> 和 <code>Client</code> 这两个对象。</p>
+<ul>
+<li><p><code>Connection</code>: 理论上一个客户端只会在一个服务端上创建一个 <code>Connection</code> 对象，在客户端启动的时候创建，服务端可以通过此对象<strong>推送数据到客户端</strong>；</p>
+</li>
+<li><p><code>Client</code>: 一个<code>Connection</code> 对象对应一个 <code>Client</code> 对象，<code>Client</code> 在<code>Connection</code> 创建的时候同步创建。负责存放由客户端注册的实例和订阅对象。当 <code>Connection</code> 断开的时候，对应的 <code>Client</code> 中的数据也会清空，反映在业务上便是，客户端连接断开之后由该客户端注册的实例和订阅者数据都清除了。</p>
+</li>
+</ul>
+<p>模型之间的对应关系如下，gRPC 客户端与服务端的 <code>Connection</code> 和 <code>Client</code> 一一对应，其中 <code>Client</code> 包含gRPC 客户端所创建的所有数据。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/haoyann/img-folder@master/Nacos%E8%BF%9E%E6%8E%A5%E6%A8%A1%E5%9E%8B.7cthxiup68s0.webp" alt="连接模型"></p>
+<h3 id="服务端启动"><a href="#服务端启动" class="headerlink" title="服务端启动"></a>服务端启动</h3><p>这里的服务端指的是 gRPC 服务的启动流程，而非 Nacos 整个服务端的启动流程。服务端的 gRPC 启动流程比较简单，主要关注两个 filter 和两个方法实现即可。</p>
+<p>代码的主要入口在 <code>com.alibaba.nacos.core.remote.grpc.BaseGrpcServer</code> ，是一个抽象类。有两个实现类 <code>GrpcSdkServer</code> 和<code>GrpcClusterServer</code> ，顾名思义分别代表处理 SDK客户端的请求和处理服务端其他节点的请求。两者的差异在于响应不同的请求如 SDK 的请求由 <code>GrpcSdkServer</code>  处理，集群其他节点由的请求由<code>GrpcClusterServer</code> 处理，其他流程都一样。</p>
+<h4 id="两个-Filter"><a href="#两个-Filter" class="headerlink" title="两个 Filter"></a>两个 Filter</h4><ol>
+<li><p><code>ServerTransportFilter</code>: 在 gRPC 连接就绪和断开的时候触发。当连接就绪的时候，将设置客户端相关属性如客户端IP、端口、 Connection Id 等信息设置到当前连接上下文中。当连接断开的时候，会将该连接的 Connection Id 所对应的 <code>Connection</code> 关闭。</p>
+</li>
+<li><p><code>ServerInterceptor</code>: 在客户端每次请求的时候生效。负责将 <code>ServerTransportFilter</code> 设置的属性设置到 RPC 上下文中，便于后续请求处理的时候可以获取客户端的相关信息，最主要是 Connection Id。</p>
+</li>
+</ol>
+<h4 id="两个方法"><a href="#两个方法" class="headerlink" title="两个方法"></a>两个方法</h4><p>在上文就提到，Nacos 定义了两个 gRPC 方法，<code>Request</code> 和<code>BiRequestStream</code> ，这里简单介绍一下这两个方法的实现逻辑。</p>
+<ol>
+<li><p><code>BiRequestStream</code> ：由<code>GrpcBiStreamRequestAcceptor</code> 实现，负责 <code>Connection</code> 对象的创建。</p>
+<p>当接受到客户端的 <code>ConnectionSetupRequest</code> 请求之后，会根据客户端的信息如Connection Id 、IP、端口等生成一个 <code>Connection</code> 对象并将其放入到 <code>connectionManager</code> 中，<code>connectionManager</code> 其实就是一个 ConcurrentHashMap 用于存放 <code>Connection</code> 对象，Key 为 Connection Id。</p>
+<p>当放入 <code>connectionManager</code> 成功之后，将会触发内部 <code>Connection</code> 对象连接成功事件，<code>Client</code> 对象也就在此同步创建。至此上文提到的数据模型 gRPC 客户端、 <code>Connection</code> 和<code>Client</code> 便通过 Connection Id 对应起来。</p>
+</li>
+<li><p><code>Request</code> ：由 <code>GrpcRequestAcceptor</code> 实现，负责处理各种业务请求。</p>
+<p>该方法的处理整体流程比较清晰，在做一个必要的参数检查之后会根据 <code>Request</code> 对象获取一个 <code>RequestHandler</code> 的对象进行请求处理，使用策略模式将客户端的不同请求和处理区分开，如服务注册、服务订阅。</p>
+<p><img src="https://cdn.jsdelivr.net/gh/haoyann/img-folder@master/Nacos%E8%AF%B7%E6%B1%82%E5%AE%9E%E7%8E%B0.xa4jnm0aym8.webp" alt="请求实现"></p>
+</li>
+</ol>
+<h3 id="客户端启动"><a href="#客户端启动" class="headerlink" title="客户端启动"></a>客户端启动</h3><blockquote>
+<p>客户端的启动流程比较复杂，为了方便理解这里就只针对主链路进行梳理。</p>
+</blockquote>
+<p>gRPC 客户端创建的时机在 <code>NamingService</code> 初始化的时候，代码入口在 <code>NamingGrpcClientProxy</code> ，有两部分需要注意  <code>NamingGrpcRedoService</code> 和 <code>start</code> 方法。</p>
+<p><strong>NamingGrpcRedoService</strong></p>
+<p>从名称可以看出是一个重试服务。上文提到当服务端与客户端连接断开时会将该连接上关联的所有数据删除。由于存在网络波动或者节点故障的情况，当客户端通过重试与服务端再次连接的时候，客户端需要将之前的数据重新注册动服务端。</p>
+<p><code>NamingGrpcRedoService</code> 会缓存客户端所有注册的实例和订阅者信息，当客户端与原来服务端重新连接或者连接到集群另外的节点上时，会将这些数据重新注册上去。</p>
+<p><strong>start</strong></p>
+<p><code>start</code>方法的流程比较长。首先是两个任务，一个负责监听当前客户端的连接状态，当状态发生改变的时候会唤醒连接事件的监听者，如上文的 <code>NamingGrpcRedoService</code> 。</p>
+<p>另外一个任务有两个作用，一是健康检查，定时请求服务端确保当前连接是可用的，如果健康检查失败将会重新连接服务端，二是如果当前客户端没有可用连接，它会在服务列表中选取一个服务端进行连接，直到连接创建成功。</p>
+<p>上面两个任务都是异步执行的，接下来看 <code>start</code> 的同步流程，将会开始连接服务端，如果重试三次都失败之后，将由上文提到的任务来负责对服务端的连接。</p>
+<p>接着看一下客户端连接到服务端的具体流程，首先会创建 gRPC 的 Stub ，创建成功之后将会发起 <code>ServerCheckRequest</code> 的请求，请求通过之后再创建 <code>biRequestStreamStub</code> 并发送 <code>ConnectionSetupRequest</code> 请求。在上文讲服务端启动的时候提到服务端在接受到客户端的 <code>ConnectionSetupRequest</code> 请求时会创建 <code>Connection</code> 和 <code>Client</code> 对象。因此在连接客户端的代码中也会看到下面一段代码，会有 100 毫秒 的 sleep 等到服务端创建完 <code>Connection</code> 对象。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//wait to register connection setup</span></span><br><span class="line">Thread.sleep(<span class="number">100L</span>);</span><br></pre></td></tr></table></figure>
+
+<p>等所有的流程都成功之后，客户端的连接便创建完成了，将发出连接已创建的通知。</p>
+<h3 id="连接管理"><a href="#连接管理" class="headerlink" title="连接管理"></a>连接管理</h3><p>由上文的分析发现客户端与服务端连接有着至关重要的重要，不仅是作用在通讯场景中还承载的业务数据，所以对连接的管理是非常重要的。上文或多或少的提到一些服务端或客户端对连接的管理，这里尝试汇总一下对连接管理的所有操作。</p>
+<p>连接的管理主要由两个目标保证连接的健康度和负载均衡。</p>
+<ul>
+<li><p>连接的健康度：</p>
+<ol>
+<li><p>服务端通过 <code>ServerTransportFilter</code> ，在 gRPC 连接断开的时候关闭 <code>Connection</code> 对象。</p>
+</li>
+<li><p>客户端定时检测，客户端会定时发送健康检查的请求给服务端，如果检测失败，客户端将会重新连接服务端。</p>
+</li>
+<li><p>服务端定时检测，服务端也会定时监测 <code>Connection</code> 对象。客户端每次请求的时候都会刷新 <code>Connection</code> 的 <code>lastActiveTime</code>  属性，如果客户端上次活跃的时间超过了一定的阈值，服务端将会请求客户端，如果请求失败了将关闭 <code>Connection</code> 。</p>
+</li>
+</ol>
+</li>
+<li><p>负载均衡：</p>
+<p>因为 gRPC 是长连接的模式，可能会出现连接不均衡的情况，所以希望服务端集群的连接保持在比较均衡的状态。</p>
+<p>当前通过运维接口方式手动调整，展示整个集群的连接负载和当前节点的负载判断负载是否均衡，并且支持连接转移的功能，将连接从当前节点转移到其他节点或者指定的节点上。</p>
+</li>
+</ul>
+<p>连接的整体生命周期如下图</p>
+<p><img src="https://cdn.jsdelivr.net/gh/haoyann/img-folder@master/Nacos%E8%BF%9E%E6%8E%A5%E7%AE%A1%E7%90%86.3y1qsnl55mw0.webp" alt="连接管理"></p>
+<h3 id="服务推送流程-amp-x20"><a href="#服务推送流程-amp-x20" class="headerlink" title="服务推送流程&amp;#x20;"></a>服务推送流程&amp;#x20;</h3><p>在分析完对连接的管理之后，再看服务推送就比较简单了。首先是服务推送的时机：</p>
+<ul>
+<li><p>服务实例发生变化，如客户端注册、移除实例；</p>
+</li>
+<li><p><code>Connection</code> 移除，对应 <code>Client</code> 中所包含的实例都会移除；</p>
+</li>
+<li><p>当客户端首次订阅的时候；</p>
+</li>
+</ul>
+<p>推送事件由三个关键属性组成，<code>service</code> 变更的服务，<code>pushToAll</code> 是否推送到所有监听者，<code>targetClients</code> 目标客户端，如客户端首次订阅的触发的推送事件就会指定推送给当前客户端。</p>
+<p>为了避免网络抖动出现的频繁推送的情况，推送事件支持延迟推送和合并推送，默认 500 毫秒内相同服务的推送事件会进行合并。</p>
+<p>整体的推送流程如下图</p>
+<p><img src="https://cdn.jsdelivr.net/gh/haoyann/img-folder@master/Nacos%E6%8E%A8%E9%80%81%E6%B5%81%E7%A8%8B.5kjaqzew00g0.webp" alt="推送流程"></p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>Nacos 使用 gRPC 做为通讯协议之后，可以学习到是如何对长连接的进行的管理，以及在此之上封装的业务模型。</p>
+
+        </div>
+
+        
+
+        
+            <ul class="post-tags-box">
+                
+                    <li class="tag-item">
+                        <a href="/tags/Nacos/">#Nacos</a>&nbsp;
+                    </li>
+                
+            </ul>
+        
+
+        
+            <div class="article-nav">
+                
+                
+                    <div class="article-next">
+                        <a class="next"
+                           rel="next"
+                           href="/2022/04/27/Raft%E7%9B%B8%E5%85%B3%E4%BC%98%E5%8C%96/"
+                        >
+                            <span class="title flex-center">
+                                <span class="post-nav-title-item">Raft 相关优化</span>
+                                <span class="post-nav-item">Next posts</span>
+                            </span>
+                            <span class="right arrow-icon flex-center">
+                              <i class="fas fa-chevron-right"></i>
+                            </span>
+                        </a>
+                    </div>
+                
+            </div>
+        
+
+        
+            <div class="comment-container">
+                <div class="comments-container">
+    <div id="comment-anchor"></div>
+    <div class="comment-area-title">
+        <i class="fas fa-comments">&nbsp;Comments</i>
+    </div>
+    
+
+        
+            
+    <div id="gitalk-container"></div>
+    <script 
+            src="//cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
+    <script >
+
+        function loadGitalk() {
+            let __gitalk__pathname = decodeURI(location.pathname);
+            const __gitalk__pathnameLength = __gitalk__pathname.length;
+            const __gitalk__pathnameMaxLength = 50;
+            if (__gitalk__pathnameLength > __gitalk__pathnameMaxLength) {
+                __gitalk__pathname = __gitalk__pathname.substring(0, __gitalk__pathnameMaxLength - 3) + '...';
+            }
+
+            try {
+                Gitalk && new Gitalk({
+                    clientID: '7fa5bd7f3f8f0e6087b1',
+                    clientSecret: '5efd51d5e51729d06fba43ea358296063b47ed34',
+                    repo: 'haoyann.github.io',
+                    owner: 'haoyann',
+                    admin: ['haoyann'],
+                    id: __gitalk__pathname,
+                    language: 'en'
+                }).render('gitalk-container');
+
+            } catch (e) {
+                window.Gitalk = null;
+            }
+        }
+
+        if ('false') {
+            const loadGitalkTimeout = setTimeout(() => {
+                loadGitalk();
+                clearTimeout(loadGitalkTimeout);
+            }, 1000);
+        } else {
+            window.addEventListener('DOMContentLoaded', loadGitalk);
+        }
+    </script>
+
+
+
+        
+    
+</div>
+
+            </div>
+        
+    </div>
+</div>
+
+
+                
+            </div>
+
+        </div>
+
+        <div class="page-main-content-bottom">
+            <footer class="footer">
+    <div class="info-container">
+        <div class="copyright-info info-item">
+            &copy;
+            
+              <span>2020</span>
+              -
+            
+            2022&nbsp;<i class="fas fa-heart icon-animate"></i>&nbsp;<a href="/">haoyann</a>
+        </div>
+        
+        <div class="theme-info info-item">
+            Powered by <a target="_blank" href="https://hexo.io">Hexo</a>&nbsp;|&nbsp;Theme&nbsp;<a class="theme-version" target="_blank" href="https://github.com/XPoet/hexo-theme-keep">Keep v3.4.5</a>
+        </div>
+        
+        
+    </div>
+</footer>
+
+        </div>
+    </div>
+
+    
+        <div class="post-tools">
+            <div class="post-tools-container">
+    <ul class="tools-list">
+        <!-- TOC aside toggle -->
+        
+            <li class="tools-item page-aside-toggle">
+                <i class="fas fa-outdent"></i>
+            </li>
+        
+
+        <!-- go comment -->
+        
+            <li class="go-comment">
+                <i class="fas fa-comment"></i>
+            </li>
+        
+    </ul>
+</div>
+
+        </div>
+    
+
+    <div class="right-bottom-side-tools">
+        <div class="side-tools-container">
+    <ul class="side-tools-list">
+        <li class="tools-item tool-font-adjust-plus flex-center">
+            <i class="fas fa-search-plus"></i>
+        </li>
+
+        <li class="tools-item tool-font-adjust-minus flex-center">
+            <i class="fas fa-search-minus"></i>
+        </li>
+
+        <li class="tools-item tool-expand-width flex-center">
+            <i class="fas fa-arrows-alt-h"></i>
+        </li>
+
+        <li class="tools-item tool-dark-light-toggle flex-center">
+            <i class="fas fa-moon"></i>
+        </li>
+
+        <!-- rss -->
+        
+
+        
+            <li class="tools-item tool-scroll-to-top flex-center">
+                <i class="fas fa-arrow-up"></i>
+            </li>
+        
+
+        <li class="tools-item tool-scroll-to-bottom flex-center">
+            <i class="fas fa-arrow-down"></i>
+        </li>
+    </ul>
+
+    <ul class="exposed-tools-list">
+        <li class="tools-item tool-toggle-show flex-center">
+            <i class="fas fa-cog fa-spin"></i>
+        </li>
+        
+    </ul>
+</div>
+
+    </div>
+
+    
+        <aside class="page-aside">
+            <div class="post-toc-wrap">
+    <div class="post-toc">
+        <ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFgRPC"><span class="nav-text">什么是gRPC</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E7%A1%80%E6%A8%A1%E5%9E%8B"><span class="nav-text">基础模型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E7%AB%AF%E5%90%AF%E5%8A%A8"><span class="nav-text">服务端启动</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%A4%E4%B8%AA-Filter"><span class="nav-text">两个 Filter</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%A4%E4%B8%AA%E6%96%B9%E6%B3%95"><span class="nav-text">两个方法</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%90%AF%E5%8A%A8"><span class="nav-text">客户端启动</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%9E%E6%8E%A5%E7%AE%A1%E7%90%86"><span class="nav-text">连接管理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E6%8E%A8%E9%80%81%E6%B5%81%E7%A8%8B-amp-x20"><span class="nav-text">服务推送流程&amp;#x20;</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-text">总结</span></a></li></ol>
+    </div>
+</div>
+        </aside>
+    
+
+    <div class="image-viewer-container">
+    <img src="">
+</div>
+
+
+    
+
+</main>
+
+
+
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/main.js"></script>
+
+<script src="/js/header-shrink.js"></script>
+
+<script src="/js/back2top.js"></script>
+
+<script src="/js/dark-light-toggle.js"></script>
+
+
+
+
+
+    
+<script src="/js/code-copy.js"></script>
+
+
+
+
+
+<div class="post-scripts">
+    
+        
+<script src="/js/left-side-toggle.js"></script>
+
+<script src="/js/libs/anime.min.js"></script>
+
+<script src="/js/toc.js"></script>
+
+    
+</div>
+
+
+
+</body>
+</html>
