@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="Hexo Theme Keep">
+    <meta name="description" content="Hexo Theme Keep">
+    <meta name="author" content="haoyann">
+    
+    <title>
+        
+            Koordinator 源码分析 |
+        
+        Soul Sacrifice
+    </title>
+    
+<link rel="stylesheet" href="/css/style.css">
+
+    <link rel="shortcut icon" href="/images/icons8-study-16.png">
+    
+<link rel="stylesheet" href="/css/font-awesome.min.css">
+
+    <script id="hexo-configurations">
+    let KEEP = window.KEEP || {};
+    KEEP.hexo_config = {"hostname":"example.com","root":"/","language":"en"};
+    KEEP.theme_config = {"toc":{"enable":true,"number":false,"expand_all":true,"init_open":true},"style":{"primary_color":"#0066CC","avatar":"/images/poto.png","favicon":"/images/icons8-study-16.png","article_img_align":"left","left_side_width":"260px","content_max_width":"920px","hover":{"shadow":false,"scale":false},"first_screen":{"enable":true,"background_img":"/images/bg.svg","description":"Keep writing and Keep loving."},"scroll":{"progress_bar":{"enable":false},"percent":{"enable":false}}},"local_search":{"enable":false,"preload":false},"code_copy":{"enable":true,"style":"default"},"pjax":{"enable":false},"lazyload":{"enable":false},"version":"3.4.5"};
+    KEEP.language_ago = {"second":"%s seconds ago","minute":"%s minutes ago","hour":"%s hours ago","day":"%s days ago","week":"%s weeks ago","month":"%s months ago","year":"%s years ago"};
+  </script>
+<meta name="generator" content="Hexo 6.1.0"></head>
+
+
+<body>
+<div class="progress-bar-container">
+    
+
+    
+</div>
+
+
+<main class="page-container">
+
+    
+
+    <div class="page-main-content">
+
+        <div class="page-main-content-top">
+            <header class="header-wrapper">
+
+    <div class="header-content">
+        <div class="left">
+            
+            <a class="logo-title" href="/">
+                Soul Sacrifice
+            </a>
+        </div>
+
+        <div class="right">
+            <div class="pc">
+                <ul class="menu-list">
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/"
+                            >
+                                HOME
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/archives"
+                            >
+                                ARCHIVES
+                            </a>
+                        </li>
+                    
+                        <li class="menu-item">
+                            <a class=""
+                               href="/about"
+                            >
+                                ABOUT
+                            </a>
+                        </li>
+                    
+                    
+                </ul>
+            </div>
+            <div class="mobile">
+                
+                <div class="icon-item menu-bar">
+                    <div class="menu-bar-middle"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="header-drawer">
+        <ul class="drawer-menu-list">
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/">HOME</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/archives">ARCHIVES</a>
+                </li>
+            
+                <li class="drawer-menu-item flex-center">
+                    <a class=""
+                       href="/about">ABOUT</a>
+                </li>
+            
+        </ul>
+    </div>
+
+    <div class="window-mask"></div>
+
+</header>
+
+
+        </div>
+
+        <div class="page-main-content-middle">
+
+            <div class="main-content">
+
+                
+                    <div class="fade-in-down-animation">
+    <div class="article-content-container">
+
+        <div class="article-title">
+            <span class="title-hover-animation">Koordinator 源码分析</span>
+        </div>
+
+        
+            <div class="article-header">
+                <div class="avatar">
+                    <img src="/images/poto.png">
+                </div>
+                <div class="info">
+                    <div class="author">
+                        <span class="name">haoyann</span>
+                        
+                            <span class="author-label">Lv1</span>
+                        
+                    </div>
+                    <div class="meta-info">
+                        <div class="article-meta-info">
+    <span class="article-date article-meta-item">
+        <i class="fas fa-edit"></i>&nbsp;
+        <span class="pc">2023-04-04 16:45:08</span>
+        <span class="mobile">2023-04-04 16:45</span>
+    </span>
+    
+    
+        <span class="article-tags article-meta-item">
+            <i class="fas fa-tags"></i>&nbsp;
+            <ul>
+                
+                    <li>
+                        <a href="/tags/%E4%BA%91%E5%8E%9F%E7%94%9F/">云原生</a>&nbsp;
+                    </li>
+                
+                    <li>
+                        | <a href="/tags/kubernetes/">kubernetes</a>&nbsp;
+                    </li>
+                
+            </ul>
+        </span>
+    
+
+    
+    
+        <span class="article-wordcount article-meta-item">
+            <i class="fas fa-file-word"></i>&nbsp;<span>5.8k Words</span>
+        </span>
+    
+    
+        <span class="article-min2read article-meta-item">
+            <i class="fas fa-clock"></i>&nbsp;<span>25 Mins</span>
+        </span>
+    
+    
+</div>
+
+                    </div>
+                </div>
+            </div>
+        
+
+        <div class="article-content markdown-body">
+            <h2 id="概况"><a href="#概况" class="headerlink" title="概况"></a>概况</h2><p>Koordinator 是阿里开源的基于 Kubernetes 支持多工作负载混合部署的调度系统，将弹性的资源配额、高效的 Pod<br>打包、超卖、节点共享与容器资源隔离相结合，实现了高利用率。</p>
+<h3 id="架构"><a href="#架构" class="headerlink" title="架构"></a>架构</h3><p>Koordinator 由两个控制面（Koordinator Scheduler&#x2F;Koordinator Manager）和一个 DaemonSet 组件(Koordlet)组成。</p>
+<p><img src="/../images/koordinator/architecture.png" alt="architecture.png"></p>
+<h4 id="Koordinator-Scheduler"><a href="#Koordinator-Scheduler" class="headerlink" title="Koordinator Scheduler"></a>Koordinator Scheduler</h4><p>Koordinator Scheduler以 Deployment 的形式部署，用于增强 Kubernetes 在混部场景下的资源调度能力，包括:</p>
+<ul>
+<li>更多的场景支持，包括弹性配额调度、资源超卖(resource overcommitment)、资源预留(resource reservation)、Gang 调度、异构资源调度。</li>
+<li>更好的性能，包括动态索引优化、等价 class 调度、随机算法优化。</li>
+<li>更安全的 descheduling，包括工作负载感知、确定性的 pod 迁移、细粒度的流量控制和变更审计支持。</li>
+</ul>
+<h4 id="Koordinator-Manager"><a href="#Koordinator-Manager" class="headerlink" title="Koordinator Manager"></a>Koordinator Manager</h4><p>Koordinator Manager 以 Deployment 的形式部署，通常由两个实例组成，一个 leader 实例和一个 backup 实例。Koordinator Manager<br>由几个控制器和 webhooks 组成，用于协调混部场景下的工作负载，资源超卖(resource overcommitment)和 SLO 管理。</p>
+<p>目前，提供了三个组件:</p>
+<ul>
+<li>Colocation Profile，用于支持混部而不需要修改工作负载。用户只需要在集群中做少量的配置，原来的工作负载就可以在混部模式下运行，通过<br>webhook 无侵入修改。</li>
+<li>SLO 控制器，用于资源超卖(resource overcommitment)管理，根据节点混部时的运行状态，动态调整集群的超发(overcommit)<br>配置比例。该控制器的核心职责是管理混部时的 SLO，如智能识别出集群中的异常节点并降低其权重，动态调整混部时的水位和压力策略，从而保证集群中<br>pod 的稳定性和吞吐量。</li>
+<li>Recommender（即将推出），它使用 histograms 来统计和预测工作负载的资源使用细节，用来预估工作负载的峰值资源需求，从而支持更好地分散热点，提高混部的效率。此外，资源<br>profiling 还将用于简化用户资源规范化配置的复杂性，如支持 VPA。</li>
+</ul>
+<h4 id="Koordlet"><a href="#Koordlet" class="headerlink" title="Koordlet"></a>Koordlet</h4><p>Koordlet 以 DaemonSet 的形式部署在 Kubernetes 集群中，用于支持混部场景下的资源超卖(resource overcommitment)、干扰检测、QoS<br>保证等。</p>
+<p>在Koordlet内部，它主要包括以下模块:</p>
+<ul>
+<li>资源 Profiling，估算 Pod 资源的实际使用情况，回收已分配但未使用的资源，用于低优先级 Pod 的 overcommit。</li>
+<li>资源隔离，为不同类型的 Pod 设置资源隔离参数，避免低优先级的 Pod 影响高优先级 Pod 的稳定性和性能。</li>
+<li>干扰检测，对于运行中的 Pod，动态检测资源争夺，包括 CPU 调度、内存分配延迟、网络、磁盘 IO 延迟等。</li>
+<li>QoS 管理器，根据资源剖析、干扰检测结果和 SLO 配置，动态调整混部节点的水位，抑制影响服务质量的 Pod。</li>
+<li>资源调优，针对混部场景进行容器资源调优，优化容器的 CPU Throttle、OOM 等，提高服务运行质量。</li>
+</ul>
+<h4 id="QoS"><a href="#QoS" class="headerlink" title="QoS"></a>QoS</h4><p>QoS 用于表达节点上 Pod 的运行质量，如获取资源的方式、获取资源的比例、QoS 保障策略等。</p>
+<h5 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h5><table>
+<thead>
+<tr>
+<th>QoS</th>
+<th>特点</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SYSTEM</td>
+<td>系统进程，资源受限</td>
+<td>对于 DaemonSets 等系统服务，虽然需要保证系统服务的延迟，但也需要限制节点上这些系统服务容器的资源使用，以确保其不占用过多的资源</td>
+</tr>
+<tr>
+<td>LSE(Latency Sensitive Exclusive)</td>
+<td>保留资源并组织同 QoS 的 pod 共享资源</td>
+<td>很少使用，常见于中间件类应用，一般在独立的资源池中使用</td>
+</tr>
+<tr>
+<td>LSR(Latency Sensitive Reserved)</td>
+<td>预留资源以获得更好的确定性</td>
+<td>类似于社区的 Guaranteed，CPU 核被绑定</td>
+</tr>
+<tr>
+<td>LS(Latency Sensitive)</td>
+<td>共享资源，对突发流量有更好的弹性</td>
+<td>微服务工作负载的典型QoS级别，实现更好的资源弹性和更灵活的资源调整能力</td>
+</tr>
+<tr>
+<td>BE(Best Effort)</td>
+<td>共享不包括 LSE 的资源，资源运行质量有限，甚至在极端情况下被杀死</td>
+<td>批量作业的典型 QoS 水平，在一定时期内稳定的计算吞吐量，低成本资源</td>
+</tr>
+</tbody></table>
+<h5 id="Koordinator-QoS与-Kubernetes-QoS-的对比"><a href="#Koordinator-QoS与-Kubernetes-QoS-的对比" class="headerlink" title="Koordinator QoS与 Kubernetes QoS 的对比"></a>Koordinator QoS与 Kubernetes QoS 的对比</h5><p>从定义部分可以看出，Koordinator 的 QoS 比 Kubernetes 的 QoS 更复杂，因为在混部场景下，我们需要对延迟敏感的工作负载的 QoS<br>进行微调，以满足混部时性能的需求。</p>
+<p>Koordinator 和 Kubernetes QoS 之间是有对应关系的:</p>
+<table>
+<thead>
+<tr>
+<th>Koordinator QoS</th>
+<th>Kubernetes QoS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SYSTEM</td>
+<td>—</td>
+</tr>
+<tr>
+<td>LSE</td>
+<td>Guaranteed</td>
+</tr>
+<tr>
+<td>LSR</td>
+<td>Guaranteed</td>
+</tr>
+<tr>
+<td>LS</td>
+<td>Guaranteed&#x2F;Burstable</td>
+</tr>
+<tr>
+<td>BE</td>
+<td>BestEffort</td>
+</tr>
+</tbody></table>
+<p>Koordlet 根据 Pod 的优先级和 QoS 定义，触发相应的资源隔离和 QoS 保障。</p>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><p>按照官网文档安装 koordinator</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Firstly add koordinator charts repository if you haven&#x27;t do this.</span></span><br><span class="line">$ helm repo add koordinator-sh https://koordinator-sh.github.io/charts/</span><br><span class="line"></span><br><span class="line"><span class="comment"># [Optional]</span></span><br><span class="line">$ helm repo update</span><br><span class="line"></span><br><span class="line"><span class="comment"># Install the latest version.</span></span><br><span class="line">$ helm install koordinator koordinator-sh/koordinator --version 1.1.1</span><br></pre></td></tr></table></figure>
+
+<p>安装完成之后在 koordinator-system namespace 查看部署的Pod，包含四个组件 koord-descheduler、koord-scheduler、koord-manager 和<br>koordlet。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl get pod -n koordinator-system -o wide</span><br><span class="line">NAME                                 READY   STATUS    RESTARTS   AGE   IP              NODE                       NOMINATED NODE   READINESS GATES</span><br><span class="line">koord-descheduler-667c77dcdc-647nh   1/1     Running   0          65m   10.244.2.65     node2                      &lt;none&gt;           &lt;none&gt;</span><br><span class="line">koord-descheduler-667c77dcdc-95752   1/1     Running   0          65m   10.244.1.56     tv3-tcbase-ciliumtest-01   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">koord-manager-dcb687d77-cml9w        1/1     Running   0          65m   10.244.0.35     master                     &lt;none&gt;           &lt;none&gt;</span><br><span class="line">koord-manager-dcb687d77-lkqvd        1/1     Running   0          65m   10.244.2.63     node2                      &lt;none&gt;           &lt;none&gt;</span><br><span class="line">koord-scheduler-9c68ff967-bb4tn      1/1     Running   0          65m   10.244.1.55     tv3-tcbase-ciliumtest-01   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">koord-scheduler-9c68ff967-mkr4b      1/1     Running   0          65m   10.244.2.64     node2                      &lt;none&gt;           &lt;none&gt;</span><br><span class="line">koordlet-4fc8t                       1/1     Running   0          40m   10.177.43.174   node2                      &lt;none&gt;           &lt;none&gt;</span><br><span class="line">koordlet-drkx9                       1/1     Running   0          41m   10.177.43.173   tv3-tcbase-ciliumtest-01   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">koordlet-hbhps                       1/1     Running   0          40m   10.177.43.172   master                     &lt;none&gt;           &lt;none&gt;</span><br></pre></td></tr></table></figure>
+
+<p>然后部署 <a class="link"   target="_blank" rel="noopener" href="https://koordinator.sh/zh-Hans/docs/best-practices/colocation-of-spark-jobs" >官网的Demo<i class="fas fa-external-link-alt"></i></a> ，将 spark job 通过<br>koordinator 进行调度，达到集群资源利用率提升的目的。</p>
+<p>在部署 spark job 之前，要创建 cluster-colocation 的配置，对 spark job 开启离线调度，这样 koordinator 才能无侵入的将BE的配置注入到<br>spark job。如下配置表示对于 namespace labels 匹配 koordinator.sh&#x2F;enable-colocation 且 Pod 的 label 满足<br>sparkoperator.k8s.io&#x2F;launched-by-spark-operator 条件的 Pod，将 Pod 的 qosClass 修改为 BE 类型（koordinator 自定义 qos 通过<br>koordinator.sh&#x2F;qosClass label 标识）同时调度器修改为 koord-scheduler。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">apiVersion: v1</span><br><span class="line">kind: Namespace</span><br><span class="line">metadata:</span><br><span class="line">  name: spark-demo</span><br><span class="line">  labels:</span><br><span class="line">    koordinator.sh/enable-colocation: &quot;true&quot;</span><br><span class="line">---</span><br><span class="line">apiVersion: config.koordinator.sh/v1alpha1</span><br><span class="line">kind: ClusterColocationProfile</span><br><span class="line">metadata:</span><br><span class="line">  name: spark-demo</span><br><span class="line">spec:</span><br><span class="line">  namespaceSelector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      koordinator.sh/enable-colocation: &quot;true&quot;</span><br><span class="line">  selector:</span><br><span class="line">    matchLabels:</span><br><span class="line">      sparkoperator.k8s.io/launched-by-spark-operator: &quot;true&quot;</span><br><span class="line">  qosClass: BE</span><br><span class="line">  priorityClassName: koord-batch</span><br><span class="line">  koordinatorPriority: 1000</span><br><span class="line">  schedulerName: koord-scheduler</span><br></pre></td></tr></table></figure>
+
+<p>查看部署的 spark job 的 pod</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ kubectl get pod -n spark-demo -o wide                                </span><br><span class="line">NAME                              READY   STATUS    RESTARTS   AGE     IP            NODE                       NOMINATED NODE   READINESS GATES</span><br><span class="line">spark-tc-complex-driver           1/1     Running   0          3m31s   10.244.0.42   master                     &lt;none&gt;           &lt;none&gt;</span><br><span class="line">sparktc-5dd11a8727158b95-exec-1   1/1     Running   0          3m16s   10.244.2.70   node2                      &lt;none&gt;           &lt;none&gt;</span><br><span class="line">sparktc-5dd11a8727158b95-exec-2   1/1     Running   0          3m16s   10.244.1.63   tv3-tcbase-ciliumtest-01   &lt;none&gt;           &lt;none&gt;</span><br><span class="line">sparktc-5dd11a8727158b95-exec-3   1/1     Running   0          3m16s   10.244.0.43   master                     &lt;none&gt;           &lt;none&gt;</span><br><span class="line">sparktc-5dd11a8727158b95-exec-4   1/1     Running   0          3m16s   10.244.2.71   node2                      &lt;none&gt;           &lt;none&gt;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>选择一个 Pod 查看详细信息，可以看到 Pod 的 label 上的 koordinator.sh&#x2F;qosClass 的类型已经设置为 BE 类型，而且 Pod 所申请的<br>cpu、mem 资源都通过拓展资源 kubernetes.io&#x2F;batch-cpu、kubernetes.io&#x2F;batch-memory 设置。</p>
+<p><img src="/../images/koordinator/pod-detail1.png" alt="pod-detail"></p>
+<p>而 Kubernetes 原始 cpu、mem 均没有设置按照 Kubernetes qos 的定义 cpu、mem 均没有设置值的 qos 是 BestEffort，验证一下确实是<br>BestEffort 类型。<br><img src="/../images/koordinator/pod-detail2.png" alt="pod-detail2"></p>
+<p>而 BestEffort 类型的 Pod cgroup 的 cpu.cfs_quota_us 和 memory.limit_in_bytes 都是 -1 代表对 cpu、mem 没有限制。去宿主机验证一下由<br>koordinator 管理的 BE 类型 Pod 是否也是这样。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">### 查找 Pod 所在的 cgroup 目录</span></span><br><span class="line">[root@tv3-tcbase-ciliumtest-01 ~]<span class="comment"># docker ps | grep sparktc-5dd11a8727158b95-exec-2</span></span><br><span class="line">9da4a872be71   39a102ae3f0a                                                        <span class="string">&quot;/opt/entrypoint.sh …&quot;</span>   21 minutes ago      Up 21 minutes                k8s_spark-kubernetes-executor_sparktc-5dd11a8727158b95-exec-2_spark-demo_73d62416-3bc4-4a1a-8834-d84acba71462_0</span><br><span class="line">282da221f3ca   registry.aliyuncs.com/google_containers/pause:3.6                   <span class="string">&quot;/pause&quot;</span>                 21 minutes ago      Up 21 minutes                k8s_POD_sparktc-5dd11a8727158b95-exec-2_spark-demo_73d62416-3bc4-4a1a-8834-d84acba71462_0</span><br><span class="line">[root@tv3-tcbase-ciliumtest-01 ~]<span class="comment"># docker inspect 9da4a872be71 | grep Cgroup</span></span><br><span class="line">            <span class="string">&quot;CgroupnsMode&quot;</span>: <span class="string">&quot;host&quot;</span>,</span><br><span class="line">            <span class="string">&quot;Cgroup&quot;</span>: <span class="string">&quot;&quot;</span>,</span><br><span class="line">            <span class="string">&quot;CgroupParent&quot;</span>: <span class="string">&quot;kubepods-besteffort-pod73d62416_3bc4_4a1a_8834_d84acba71462.slice&quot;</span>,</span><br><span class="line">            <span class="string">&quot;DeviceCgroupRules&quot;</span>: null,</span><br><span class="line"></span><br><span class="line"><span class="comment">### 查看 Pod 的 cpu 限制</span></span><br><span class="line">[root@tv3-tcbase-ciliumtest-01 kubepods-besteffort-pod73d62416_3bc4_4a1a_8834_d84acba71462.slice]<span class="comment"># cat cpu.cfs_quota_us</span></span><br><span class="line">100000</span><br><span class="line"></span><br><span class="line"><span class="comment">### 查看容器的 cpu 限制 </span></span><br><span class="line">[root@tv3-tcbase-ciliumtest-01 kubepods-besteffort-pod73d62416_3bc4_4a1a_8834_d84acba71462.slice]<span class="comment"># cat docker-9da4a872be71c8f682e1735289fcb232343a2876b673e03eb539e8e0feb7265c.scope/cpu.cfs_quota_us</span></span><br><span class="line">100000</span><br><span class="line"></span><br><span class="line"><span class="comment">### 查看 Pod 的内存限制</span></span><br><span class="line">[root@tv3-tcbase-ciliumtest-01 kubepods-besteffort-pod73d62416_3bc4_4a1a_8834_d84acba71462.slice]<span class="comment"># cat memory.limit_in_bytes</span></span><br><span class="line">1476395008</span><br><span class="line"><span class="comment">### 查看容器的内存限制</span></span><br><span class="line">[root@tv3-tcbase-ciliumtest-01 kubepods-besteffort-pod73d62416_3bc4_4a1a_8834_d84acba71462.slice]<span class="comment"># cat docker-9da4a872be71c8f682e1735289fcb232343a2876b673e03eb539e8e0feb7265c.scope/memory.limit_in_bytes</span></span><br><span class="line">1476395008</span><br></pre></td></tr></table></figure>
+
+<p>查看之后发现即使是 BestEffort ，cpu、mem 均做了限制而去都是 Pod 上 kubernetes.io&#x2F;batch-cpu、kubernetes.io&#x2F;batch-memory<br>所限制的值。说明 BE 类型的 Pod 即使是 BestEffort 的资源也是受到限制的，不会任意使用宿主机的资源。</p>
+<h3 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h3><p>上诉 spark job Pod 的创建和调度流程如下：<br><img src="/../images/koordinator/pod-schedule.jpg" alt="pod-schedule"></p>
+<ol>
+<li>调用 api-server 创建 Pod；</li>
+<li>通过 webhook koordinator-manager 组件修改 Pod 的调度器名称、qos和拓展资源等信息；</li>
+<li>koordinator-scheduler 监听到 Pod 的创建按照内部插件过滤、优选 Node，重要的插件有按照拓展资源过滤和节点真实负载调度；</li>
+<li>Kubelet 在节点上拉起容器，Koordlet 监听到 Pod 和容器的创建，根据拓展资源的信息修改 cgroup 的参数；</li>
+</ol>
+<p>这是离线 Pod 极简的调度流程，接下来将对 koordinator 每个组件的源码进行分析。由于 koordinator<br>的源码量比较多，本文不会特别分析代码的细节，主要过一下主要流程，加深对 koordinator 框架的了解。</p>
+<h2 id="koordlet"><a href="#koordlet" class="headerlink" title="koordlet"></a>koordlet</h2><p>koordlet 是所有组件中最复杂的，最重要的几个功能点在于指标和设备信息采集、资源隔离设置、资源压制与驱逐。这对操作系统了解要比较了解，因为要涉及到一些隔离参数的设置包括<br>cgroup v1、cgroup v2，甚至还需要对硬件也有所了解比如 L3 的隔离和 NUMA 的绑定。当然这里不会介绍很细节的内容，主要还是过流程。</p>
+<h3 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h3><p>启动流程比较简单，创建各种组件并启动起来，下面是对各个组件详细的介绍。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 创建</span></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewDaemon</span><span class="params">(config *config.Configuration)</span></span> (Daemon, <span class="type">error</span>) &#123;</span><br><span class="line">...</span><br><span class="line">metricCache, err := metriccache.NewMetricCache(config.MetricCacheConf)</span><br><span class="line">collectorService := metricsadvisor.NewMetricAdvisor(config.CollectorConf, statesInformer, metricCache)</span><br><span class="line"></span><br><span class="line">resManagerService := resmanager.NewResManager(config.ResManagerConf, scheme, kubeClient, crdClient, nodeName, statesInformer, metricCache, <span class="type">int64</span>(config.CollectorConf.CollectResUsedIntervalSeconds))</span><br><span class="line"></span><br><span class="line">qosManager := qosmanager.NewQosManager(config.QosManagerConf, scheme, kubeClient, nodeName, statesInformer, metricCache)</span><br><span class="line"></span><br><span class="line">runtimeHook, err := runtimehooks.NewRuntimeHook(statesInformer, config.RuntimeHookConf)</span><br><span class="line"></span><br><span class="line">d := &amp;daemon&#123;</span><br><span class="line">metricAdvisor:  collectorService,</span><br><span class="line">statesInformer: statesInformer,</span><br><span class="line">metricCache:    metricCache,</span><br><span class="line">resManager:     resManagerService,</span><br><span class="line">qosManager:     qosManager,</span><br><span class="line">runtimeHook:    runtimeHook,</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">return</span> d, <span class="literal">nil</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(d *daemon)</span></span> Run(stopCh &lt;-<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;) &#123;</span><br><span class="line"><span class="keyword">go</span> <span class="function"><span class="keyword">func</span> <span class="params">()</span></span> &#123;</span><br><span class="line"><span class="keyword">if</span> err := d.metricCache.Run(stopCh); err != <span class="literal">nil</span> &#123;</span><br><span class="line">klog.Fatalf(<span class="string">&quot;Unable to run the metric cache: &quot;</span>, err)</span><br><span class="line">&#125;</span><br><span class="line">&#125;()</span><br><span class="line">...</span><br><span class="line"><span class="keyword">go</span> <span class="function"><span class="keyword">func</span> <span class="params">()</span></span> &#123;</span><br><span class="line"><span class="keyword">if</span> err := d.runtimeHook.Run(stopCh); err != <span class="literal">nil</span> &#123;</span><br><span class="line">klog.Fatalf(<span class="string">&quot;Unable to run the runtimeHook: &quot;</span>, err)</span><br><span class="line">&#125;</span><br><span class="line">&#125;()</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h3 id="collectorService"><a href="#collectorService" class="headerlink" title="collectorService"></a>collectorService</h3><p>这个服务功能有以下几点</p>
+<ol>
+<li><p>收集 Pod 的 cpu、mem 使用情况；</p>
+</li>
+<li><p>收集 Node 的 cpu、mem 使用情况；</p>
+</li>
+<li><p>收集 Node CPU 信息，包括 CPU 核数、socket、l3、node 等信息；</p>
+</li>
+<li><p>其他设备的信息比如 gpu；</p>
+</li>
+</ol>
+<p><img src="/../images/koordinator/collector-service.png" alt="collector-service"></p>
+<h4 id="Pod指标收集流程"><a href="#Pod指标收集流程" class="headerlink" title="Pod指标收集流程"></a>Pod指标收集流程</h4><p>接下来看一下 Pod 指标的收集流程，代码在 pod_resource_collector 中。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *podResourceCollector)</span></span> Run(stopCh &lt;-<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;) &#123;</span><br><span class="line">devicesSynced := <span class="function"><span class="keyword">func</span> <span class="params">()</span></span> <span class="type">bool</span> &#123;</span><br><span class="line"><span class="keyword">return</span> framework.DeviceCollectorsStarted(p.deviceCollectors)</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">if</span> !cache.WaitForCacheSync(stopCh, p.statesInformer.HasSynced, devicesSynced) &#123;</span><br><span class="line"><span class="comment">// Koordlet exit because of statesInformer sync failed.</span></span><br><span class="line">klog.Fatalf(<span class="string">&quot;timed out waiting for states informer caches to sync&quot;</span>)</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">go</span> wait.Until(p.collectPodResUsed, p.collectInterval, stopCh)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Run 方法将启动一个定时任务，定时收集 Pod 指标，收集周期默认为 1 s，下面是简化的代码</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *podResourceCollector)</span></span> collectPodResUsed() &#123;</span><br><span class="line"><span class="comment">// 获取节点上所有的 Pod</span></span><br><span class="line">podMetas := p.statesInformer.GetAllPods()</span><br><span class="line"><span class="keyword">for</span> _, meta := <span class="keyword">range</span> podMetas &#123;</span><br><span class="line">pod := meta.Pod</span><br><span class="line">uid := <span class="type">string</span>(pod.UID) <span class="comment">// types.UID</span></span><br><span class="line">collectTime := time.Now()</span><br><span class="line">podCgroupDir := meta.CgroupDir</span><br><span class="line"><span class="comment">// 从 cgroup 获取 cpu、mem 的使用情况</span></span><br><span class="line">currentCPUUsage, err0 := p.cgroupReader.ReadCPUAcctUsage(podCgroupDir)</span><br><span class="line">memStat, err1 := p.cgroupReader.ReadMemoryStat(podCgroupDir)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 计算出 Pod 当前 cpu、mem 使用情况，构建 podMetric 对象</span></span><br><span class="line">podMetric := metriccache.PodResourceMetric&#123;</span><br><span class="line">PodUID: uid,</span><br><span class="line">CPUUsed: metriccache.CPUMetric&#123;</span><br><span class="line"><span class="comment">// 1.0 CPU = 1000 Milli-CPU</span></span><br><span class="line">CPUUsed: *resource.NewMilliQuantity(<span class="type">int64</span>(cpuUsageValue*<span class="number">1000</span>), resource.DecimalSI),</span><br><span class="line">&#125;,</span><br><span class="line">MemoryUsed: metriccache.MemoryMetric&#123;</span><br><span class="line"><span class="comment">// 1.0 kB Memory = 1024 B</span></span><br><span class="line">MemoryWithoutCache: *resource.NewQuantity(memUsageValue, resource.BinarySI),</span><br><span class="line">&#125;,</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 将 podMetric 插入到内存数据库中</span></span><br><span class="line"><span class="keyword">if</span> err := p.metricDB.InsertPodResourceMetric(collectTime, &amp;podMetric); err != <span class="literal">nil</span> &#123;</span><br><span class="line">klog.Errorf(<span class="string">&quot;insert pod %s/%s, uid %s resource metric failed, metric %v, err %v&quot;</span>,</span><br><span class="line">pod.Namespace, pod.Name, uid, podMetric, err)</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 收集 Pod 各个容器的资源使用率</span></span><br><span class="line">p.collectContainerResUsed(meta)</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>Node 指标的收集和 Pod 的大同小异就不一一分析了。</p>
+<h4 id="指标上报流程"><a href="#指标上报流程" class="headerlink" title="指标上报流程"></a>指标上报流程</h4><p>收集到 Pod 和 Node 的资源使用情况之后需要通过 crd 上报给 api-server ，以便于在调度和拓展资源计算中使用。下面分析一下指标的上报流程。</p>
+<p>指标上报到的代码在 states_nodemetric.go 中，为了逻辑统一就和指标采集放在一起了。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(r *nodeMetricInformer)</span></span> syncNodeMetricWorker(stopCh &lt;-<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;) &#123;</span><br><span class="line">reportInterval := r.getNodeMetricReportInterval()</span><br><span class="line"><span class="keyword">for</span> &#123;</span><br><span class="line"><span class="keyword">select</span> &#123;</span><br><span class="line"><span class="keyword">case</span> &lt;-stopCh:</span><br><span class="line"><span class="keyword">return</span></span><br><span class="line"><span class="keyword">case</span> &lt;-time.After(reportInterval):</span><br><span class="line">r.sync()</span><br><span class="line">reportInterval = r.getNodeMetricReportInterval()</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先也是一个定时任务上报指标，默认上报周期是 60S。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(r *nodeMetricInformer)</span></span> sync() &#123;</span><br><span class="line">...</span><br><span class="line"><span class="comment">// 从内存数据库中查询 pod、node 的指标信息（过去五分钟的平均值和一些百分位指标）</span></span><br><span class="line">nodeMetricInfo, podMetricInfo := r.collectMetric()</span><br><span class="line"><span class="keyword">if</span> nodeMetricInfo == <span class="literal">nil</span> &#123;</span><br><span class="line">klog.Warningf(<span class="string">&quot;node metric is not ready, skip this round.&quot;</span>)</span><br><span class="line"><span class="keyword">return</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 构建 NodeMetricStatus 对象 </span></span><br><span class="line">newStatus := &amp;slov1alpha1.NodeMetricStatus&#123;</span><br><span class="line">UpdateTime: &amp;metav1.Time&#123;Time: time.Now()&#125;,</span><br><span class="line">NodeMetric: nodeMetricInfo,</span><br><span class="line">PodsMetric: podMetricInfo,</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 更新 nodeMetric 对象</span></span><br><span class="line">retErr := retry.RetryOnConflict(retry.DefaultBackoff, <span class="function"><span class="keyword">func</span> <span class="params">()</span></span> <span class="type">error</span> &#123;</span><br><span class="line">nodeMetric, err := r.nodeMetricLister.Get(r.nodeName)</span><br><span class="line"><span class="keyword">if</span> errors.IsNotFound(err) &#123;</span><br><span class="line">klog.Warningf(<span class="string">&quot;nodeMetric %v not found, skip&quot;</span>, r.nodeName)</span><br><span class="line"><span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">klog.Warningf(<span class="string">&quot;failed to get %s nodeMetric: %v&quot;</span>, r.nodeName, err)</span><br><span class="line"><span class="keyword">return</span> err</span><br><span class="line">&#125;</span><br><span class="line">err = r.statusUpdater.updateStatus(nodeMetric, newStatus)</span><br><span class="line"><span class="keyword">return</span> err</span><br><span class="line">&#125;)</span><br><span class="line">...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>NodeMetric 数据格式，Node 数据包含平均值和 5m、10m、30m 各个百分位的值，百分位的数据用于调度中，而 Pod 仅有平均值，最后还有<br>NodeMetric 的更新时间，代表数据的及时性，如果长时间未更新的数据将会丢弃。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">apiVersion:</span> <span class="string">slo.koordinator.sh/v1alpha1</span></span><br><span class="line"><span class="attr">kind:</span> <span class="string">NodeMetric</span></span><br><span class="line"><span class="attr">metadata:</span></span><br><span class="line">  <span class="attr">creationTimestamp:</span> <span class="string">&quot;2023-03-28T05:59:52Z&quot;</span></span><br><span class="line">  <span class="attr">generation:</span> <span class="number">1</span></span><br><span class="line">  <span class="attr">name:</span> <span class="string">node2</span></span><br><span class="line">  <span class="attr">resourceVersion:</span> <span class="string">&quot;2408353&quot;</span></span><br><span class="line">  <span class="attr">uid:</span> <span class="string">8d995bec-859c-4fd2-b15d-785a4daaa508</span></span><br><span class="line"><span class="attr">spec:</span></span><br><span class="line">  <span class="attr">metricCollectPolicy:</span></span><br><span class="line">    <span class="attr">aggregateDurationSeconds:</span> <span class="number">300</span></span><br><span class="line">    <span class="attr">reportIntervalSeconds:</span> <span class="number">60</span></span><br><span class="line"><span class="attr">status:</span></span><br><span class="line">  <span class="attr">nodeMetric:</span></span><br><span class="line">    <span class="attr">aggregatedNodeUsages:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">duration:</span> <span class="string">5m0s</span></span><br><span class="line">        <span class="attr">usage:</span></span><br><span class="line">          <span class="attr">p50:</span></span><br><span class="line">            <span class="attr">resources:</span></span><br><span class="line">              <span class="attr">cpu:</span> <span class="string">1158m</span></span><br><span class="line">              <span class="attr">memory:</span> <span class="string">1915232Ki</span></span><br><span class="line">          <span class="attr">p90:</span></span><br><span class="line">            <span class="attr">resources:</span></span><br><span class="line">              <span class="attr">cpu:</span> <span class="string">1218m</span></span><br><span class="line">              <span class="attr">memory:</span> <span class="string">1920740Ki</span></span><br><span class="line">          <span class="attr">p95:</span></span><br><span class="line">            <span class="attr">resources:</span></span><br><span class="line">              <span class="attr">cpu:</span> <span class="string">1238m</span></span><br><span class="line">              <span class="attr">memory:</span> <span class="string">1921776Ki</span></span><br><span class="line">          <span class="attr">p99:</span></span><br><span class="line">            <span class="attr">resources:</span></span><br><span class="line">              <span class="attr">cpu:</span> <span class="string">1611m</span></span><br><span class="line">              <span class="attr">memory:</span> <span class="string">1925908Ki</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">duration:</span> <span class="string">10m0s</span></span><br><span class="line">        <span class="attr">usage:</span></span><br><span class="line">          <span class="attr">p50:</span></span><br><span class="line">            <span class="attr">resources:</span></span><br><span class="line">              <span class="attr">cpu:</span> <span class="string">1158m</span></span><br><span class="line">              <span class="attr">memory:</span> <span class="string">1914720Ki</span></span><br><span class="line">          <span class="attr">p90:</span></span><br><span class="line">            <span class="attr">resources:</span></span><br><span class="line">              <span class="attr">cpu:</span> <span class="string">1218m</span></span><br><span class="line">              <span class="attr">memory:</span> <span class="string">1921128Ki</span></span><br><span class="line">          <span class="attr">p95:</span></span><br><span class="line">            <span class="attr">resources:</span></span><br><span class="line">              <span class="attr">cpu:</span> <span class="string">1257m</span></span><br><span class="line">              <span class="attr">memory:</span> <span class="string">1922352Ki</span></span><br><span class="line">          <span class="attr">p99:</span></span><br><span class="line">            <span class="attr">resources:</span></span><br><span class="line">              <span class="attr">cpu:</span> <span class="string">1611m</span></span><br><span class="line">              <span class="attr">memory:</span> <span class="string">1925460Ki</span></span><br><span class="line">      <span class="bullet">-</span> <span class="attr">duration:</span> <span class="string">30m0s</span></span><br><span class="line">        <span class="attr">usage:</span></span><br><span class="line">          <span class="attr">p50:</span></span><br><span class="line">            <span class="attr">resources:</span></span><br><span class="line">              <span class="attr">cpu:</span> <span class="string">1158m</span></span><br><span class="line">              <span class="attr">memory:</span> <span class="string">1913280Ki</span></span><br><span class="line">          <span class="attr">p90:</span></span><br><span class="line">            <span class="attr">resources:</span></span><br><span class="line">              <span class="attr">cpu:</span> <span class="string">1209m</span></span><br><span class="line">              <span class="attr">memory:</span> <span class="string">1921168Ki</span></span><br><span class="line">          <span class="attr">p95:</span></span><br><span class="line">            <span class="attr">resources:</span></span><br><span class="line">              <span class="attr">cpu:</span> <span class="string">1248m</span></span><br><span class="line">              <span class="attr">memory:</span> <span class="string">1922624Ki</span></span><br><span class="line">          <span class="attr">p99:</span></span><br><span class="line">            <span class="attr">resources:</span></span><br><span class="line">              <span class="attr">cpu:</span> <span class="string">1697m</span></span><br><span class="line">              <span class="attr">memory:</span> <span class="string">1927884Ki</span></span><br><span class="line">    <span class="attr">nodeUsage:</span></span><br><span class="line">      <span class="attr">resources:</span></span><br><span class="line">        <span class="attr">cpu:</span> <span class="string">1174m</span></span><br><span class="line">        <span class="attr">memory:</span> <span class="string">&quot;1960085340&quot;</span></span><br><span class="line">  <span class="attr">podsMetric:</span></span><br><span class="line">    <span class="bullet">-</span> <span class="attr">name:</span> <span class="string">metrics-server-79b99c4d99-92xj9</span></span><br><span class="line">      <span class="attr">namespace:</span> <span class="string">kube-system</span></span><br><span class="line">      <span class="attr">podUsage:</span></span><br><span class="line">        <span class="attr">resources:</span></span><br><span class="line">          <span class="attr">cpu:</span> <span class="string">2m</span></span><br><span class="line">          <span class="attr">memory:</span> <span class="string">&quot;30705615&quot;</span></span><br><span class="line">  <span class="attr">updateTime:</span> <span class="string">&quot;2023-03-29T07:29:21Z&quot;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="resManagerService"><a href="#resManagerService" class="headerlink" title="resManagerService"></a>resManagerService</h3><p>这个服务功能在于对资源的管理，基本流程都是通过定时任务按照配置定期设置操作系统参数，包括以下功能：</p>
+<ol>
+<li>cpu 压制</li>
+<li>cpu burst</li>
+<li>cpu、mem 驱逐</li>
+<li>l3 隔离</li>
+</ol>
+<p>有些功能需要操作系统或硬件的支持比如 cpu burst 和 l3 隔离，这里就分析一下 cpu 压制和驱逐的流程。</p>
+<h4 id="cpu-压制"><a href="#cpu-压制" class="headerlink" title="cpu 压制"></a>cpu 压制</h4><p>CPU 压制的目的是在节点负载增加的时候可以抑制 BE 类型的工作负载，确保节点上容器的稳定性，和在负载减少时增加 BE 类型工作负载的资源配额。</p>
+<p><img src="/../images/koordinator/cpu-suppress1.svg" alt="cpu-suppress"></p>
+<p>如上图所示</p>
+<p> CPU Threshold 代表节点 CPU 使用率的阈值，Pod (LS).Usage 表示 LS pod 的 CPU 使用率。 CPU Restriction for BE 限制表示 BE pod 的 CPU 使用率。BE pod 可以使用的 CPU 资源量是根据 LS pod 的 CPU 使用率增减来调整的。计算公式如下:</p>
+<figure class="highlight tex"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">suppress(BE) := node.Total * SLOPercent - pod(LS).Used - system.Used</span><br></pre></td></tr></table></figure>
+
+<p>当 Pod (LS).Usage 的使用率上升，BE 可使用的 CPU 资源资源将会减少便会抑制 BE Pod 的CPU资源，上图通过绑核的方式减少 BE Pod  所能使用的 cpu 核数从而达到抑制 CPU 的目的。</p>
+<p>代码入口在 cpu_suppress.go 文件，以下为代码的主要流程</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(r *CPUSuppress)</span></span> suppressBECPU() &#123;</span><br><span class="line">  <span class="comment">// 获取配置信息</span></span><br><span class="line">  nodeSLO := r.resmanager.getNodeSLOCopy()</span><br><span class="line">  ....</span><br><span class="line">  <span class="comment">// 计算be压制的cpu资源，suppress(BE) := node.Total * SLOPercent - pod(LS).Used - system.Used</span></span><br><span class="line">  suppressCPUQuantity := r.calculateBESuppressCPU(node, nodeMetric, podMetrics, podMetas,</span><br><span class="line">		*nodeSLO.Spec.ResourceUsedThresholdWithBE.CPUSuppressThresholdPercent)</span><br><span class="line">  ...</span><br><span class="line">  <span class="comment">// 设置 cgroup 参数</span></span><br><span class="line">  nodeCPUInfo, err := r.resmanager.metricCache.GetNodeCPUInfo(&amp;metriccache.QueryParam&#123;&#125;)</span><br><span class="line">  <span class="comment">// 修改 cpu quota</span></span><br><span class="line">	<span class="keyword">if</span> nodeSLO.Spec.ResourceUsedThresholdWithBE.CPUSuppressPolicy == slov1alpha1.CPUCfsQuotaPolicy &#123;</span><br><span class="line">		r.adjustByCfsQuota(suppressCPUQuantity, node)</span><br><span class="line">		r.suppressPolicyStatuses[<span class="type">string</span>(slov1alpha1.CPUCfsQuotaPolicy)] = policyUsing</span><br><span class="line">		r.recoverCPUSetIfNeed(koordletutil.ContainerCgroupPathRelativeDepth)</span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// 修改 cpuset </span></span><br><span class="line">		r.adjustByCPUSet(suppressCPUQuantity, nodeCPUInfo)</span><br><span class="line">		r.suppressPolicyStatuses[<span class="type">string</span>(slov1alpha1.CPUSetPolicy)] = policyUsing</span><br><span class="line">		r.recoverCFSQuotaIfNeed()</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="驱逐"><a href="#驱逐" class="headerlink" title="驱逐"></a>驱逐</h4><p>驱逐包括 cpu 驱逐和 mem 驱逐，基本流程都是一样的，这里就分析 cpu 驱逐的流程。 </p>
+<p>代码流程在 cpu_evict 文件中。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *CPUEvictor)</span></span> cpuEvict() &#123;</span><br><span class="line">  ...</span><br><span class="line">  <span class="comment">// 获取配置信息</span></span><br><span class="line">	nodeSLO := c.resmanager.getNodeSLOCopy()</span><br><span class="line">  ...</span><br><span class="line">	node := c.resmanager.statesInformer.GetNode()</span><br><span class="line">	cpuCapacity := node.Status.Capacity.Cpu().Value()</span><br><span class="line">  ...</span><br><span class="line">  <span class="comment">// 获取配置和节点开始执行任务</span></span><br><span class="line">	c.evictByResourceSatisfaction(node, thresholdConfig, windowSeconds)</span><br><span class="line">	klog.V(<span class="number">5</span>).Info(<span class="string">&quot;cpu evict process finished.&quot;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>进入到 <code>evictByResourceSatisfaction</code> 方法，可以看到驱逐实例有三个主要的步骤</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *CPUEvictor)</span></span> evictByResourceSatisfaction(node *corev1.Node, thresholdConfig *slov1alpha1.ResourceThresholdStrategy, windowSeconds <span class="type">int64</span>) &#123;</span><br><span class="line">	<span class="keyword">if</span> !isSatisfactionConfigValid(thresholdConfig) &#123;</span><br><span class="line">		<span class="keyword">return</span></span><br><span class="line">	&#125;</span><br><span class="line">  <span class="comment">// 计算需要驱逐的 cpu 数量</span></span><br><span class="line">	currentBECPU, milliRelease := c.calculateMilliRelease(thresholdConfig, windowSeconds)</span><br><span class="line">	<span class="keyword">if</span> milliRelease &gt; <span class="number">0</span> &#123;</span><br><span class="line">    <span class="comment">// 按照优先级将 BE Pod 进行排序</span></span><br><span class="line">		bePodInfos := c.getPodEvictInfoAndSort(currentBECPU)</span><br><span class="line">    <span class="comment">// kill 容器并驱逐 Pod，直到驱逐的 Pod 的 cpu 大于 milliRelease</span></span><br><span class="line">		c.killAndEvictBEPodsRelease(node, bePodInfos, milliRelease)</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li>根据监控数据和配置的阈值计算出需要驱逐的 cpu 数量是多少；</li>
+<li>获取 BE 类型的 Pod 并按照优先级和 cpu 使用率进行排序；</li>
+<li>执行实际驱逐 Pod 的动作，并在驱逐之前先 kill 容器，直到驱逐 Pod 的 cpu使用率达到 milliRelease；</li>
+</ol>
+<h3 id="runtimeHook"><a href="#runtimeHook" class="headerlink" title="runtimeHook"></a>runtimeHook</h3><p>runtimeHook 顾名思义是在 Pod 创建的时候注册的一系列钩子，用于BE Pod、容器 cgroup 的设置和一些系统参数创建。此服务主要做以下几个功能</p>
+<ol>
+<li>根据拓展资源 kubernetes.io&#x2F;batch-cpu、kubernetes.io&#x2F;batch-memory 设置 Pod 和容器的资源限制；</li>
+<li>对 Pod CPU 进行精细化的编排，例如 CPU 绑定策略、CPU 独占策略、NUMA 拓扑对齐策略和NUMA 拓扑信息等；</li>
+<li>对 GPU 的管理；</li>
+</ol>
+<p>Pod 生命周期变更的 Hook 触发有两个地方，一个是通过 RuntimeProxy 触发，还有就是 koordlet 定时同步 Pod 信息和 watch cgroup 文件目录监听 Pod 和容器的创建进行触发。</p>
+<h4 id="RuntimeProxy"><a href="#RuntimeProxy" class="headerlink" title="RuntimeProxy"></a>RuntimeProxy</h4><p>KoordRuntimeProxy 充当 Kubelet 和 Containerd 之间的代理（ Dockershim 场景下是 Dockerd ），它用于拦截 CRI 请求，并应用一些资源管理策略， 如混合工作负载编排场景下按实例优先级设置不同的 cgroup 参数，针对最新的 Linux 内核、CPU 架构应用新的隔离策略等。</p>
+<p><img src="/../images/koordinator/koord-runtime1.svg" alt="koord-runtime"></p>
+<p>RuntimeProxy 这个组件会作为 kubelet 的 CRI 允许，在 Pod 和容器创建的时候 kubelet 会请求 cri，RuntimeProxy 将会拦截这些请求，触发注册到 RuntimeProxy 上的插件（通过 gRPC 调用）获取到插件修改之后的 cri 请求参数继续请求后端 containerd 组件。</p>
+<p>RuntimeProxy 有以下几个 Hook</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> (</span><br><span class="line">	PreRunPodSandbox            RuntimeHookType = <span class="string">&quot;PreRunPodSandbox&quot;</span></span><br><span class="line">	PostStopPodSandbox          RuntimeHookType = <span class="string">&quot;PostStopPodSandbox&quot;</span></span><br><span class="line">	PreCreateContainer          RuntimeHookType = <span class="string">&quot;PreCreateContainer&quot;</span></span><br><span class="line">	PreStartContainer           RuntimeHookType = <span class="string">&quot;PreStartContainer&quot;</span></span><br><span class="line">	PostStartContainer          RuntimeHookType = <span class="string">&quot;PostStartContainer&quot;</span></span><br><span class="line">	PreUpdateContainerResources RuntimeHookType = <span class="string">&quot;PreUpdateContainerResources&quot;</span></span><br><span class="line">	PostStopContainer           RuntimeHookType = <span class="string">&quot;PostStopContainer&quot;</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<p><img src="/../images/koordinator/koord-runtime2.jpg" alt="koord-runtime"></p>
+<ol>
+<li>kubelet 请求 cri 创建容器；</li>
+<li>runtimeproxy 拦截请求触发注册好的插件，通过 gRPC 请求；</li>
+<li>koordlet 通过触发的 Hook ，有些需要修改 OS 参数，有些需要改变 cri 请求参数；</li>
+<li>runtimeproxy 通过插件返回结果构建新的 cri 请求参数，请求 containerd；</li>
+</ol>
+<h4 id="Watch-And-Sync"><a href="#Watch-And-Sync" class="headerlink" title="Watch And Sync"></a>Watch And Sync</h4><p>在插件注册的时候可以寻找两种类型一个是通过 runtimeProxy 触发的还有是通过 koordlet 内部触发，这里就分析 koordlet 是怎么监听 Pod 的变更的。</p>
+<p><img src="/../images/koordinator/koord-hook1.png" alt="koord-hook"></p>
+<p><code>reconciler.RegisterCgroupReconciler()</code>  是将注册的 func 通过一个 map 存起来，这里找一下在那里触发 map 里的 func 的，发现在 <code>reconciler.go</code> 的 <code>reconcilePodCgroup</code> 方法中。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *reconciler)</span></span> reconcilePodCgroup(stopCh &lt;-<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;) &#123;</span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> &lt;-c.podUpdated:</span><br><span class="line">			podsMeta := c.getPodsMeta()</span><br><span class="line">			<span class="keyword">for</span> _, podMeta := <span class="keyword">range</span> podsMeta &#123;</span><br><span class="line">        <span class="comment">// 寻找注册的 func ，进行触发</span></span><br><span class="line">				<span class="keyword">for</span> _, r := <span class="keyword">range</span> globalCgroupReconcilers.podLevel &#123;</span><br><span class="line">          .... </span><br><span class="line">			&#125;</span><br><span class="line">		<span class="keyword">case</span> &lt;-stopCh:</span><br><span class="line">			klog.V(<span class="number">1</span>).Infof(<span class="string">&quot;stop reconcile pod cgroup&quot;</span>)</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到这个方法通过 <code>chan podUpdated</code>  阻塞获取 pod 更新事件，再跟一下是在哪里触发的 。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(c *reconciler)</span></span> podRefreshCallback(t statesinformer.RegisterType, o <span class="keyword">interface</span>&#123;&#125;,</span><br><span class="line">	podsMeta []*statesinformer.PodMeta) &#123;</span><br><span class="line">	c.podsMutex.Lock()</span><br><span class="line">	<span class="keyword">defer</span> c.podsMutex.Unlock()</span><br><span class="line">	c.podsMeta = podsMeta</span><br><span class="line">  <span class="comment">// 触发变更</span></span><br><span class="line">	<span class="keyword">if</span> <span class="built_in">len</span>(c.podUpdated) == <span class="number">0</span> &#123;</span><br><span class="line">		c.podUpdated &lt;- <span class="keyword">struct</span>&#123;&#125;&#123;&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">func</span> <span class="title">NewReconciler</span><span class="params">(op Options)</span></span> Reconciler &#123;</span><br><span class="line">	r := &amp;reconciler&#123;</span><br><span class="line">		podUpdated: <span class="built_in">make</span>(<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;, <span class="number">1</span>),</span><br><span class="line">		executor:   op.Executor,</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 注册监听 Pod 事件</span></span><br><span class="line">	op.StatesInformer.RegisterCallbacks(statesinformer.RegisterTypeAllPods, <span class="string">&quot;runtime-hooks-reconciler&quot;</span>,</span><br><span class="line">		<span class="string">&quot;Reconcile cgroup files if pod updated&quot;</span>, r.podRefreshCallback)</span><br><span class="line">	<span class="keyword">return</span> r</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>又注册了一个 Pod 更新回调的方法，再跟一下发现触发的代码在 <code>states_pods.go</code> 的 <code>syncPods</code> 中，而  <code>syncPods</code> 触发如下，通过定时任务和事件触发。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(s *podsInformer)</span></span> syncKubeletLoop(duration time.Duration, stopCh &lt;-<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;) &#123;</span><br><span class="line">	timer := time.NewTimer(duration)</span><br><span class="line">	<span class="keyword">defer</span> timer.Stop()</span><br><span class="line">	s.syncPods()</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">      <span class="comment">// 事件触发，Pod 创建事件</span></span><br><span class="line">		<span class="keyword">case</span> &lt;-s.podCreated:</span><br><span class="line">			<span class="keyword">if</span> rateLimiter.Allow() &#123;</span><br><span class="line">				s.syncPods()</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				klog.V(<span class="number">4</span>).Infof(<span class="string">&quot;new pod created, but sync rate limiter is not allowed&quot;</span>)</span><br><span class="line">			&#125;</span><br><span class="line">      <span class="comment">// 定时任务触发</span></span><br><span class="line">		<span class="keyword">case</span> &lt;-timer.C:</span><br><span class="line">			timer.Reset(duration)</span><br><span class="line">			s.syncPods()</span><br><span class="line">		<span class="keyword">case</span> &lt;-stopCh:</span><br><span class="line">			klog.Infof(<span class="string">&quot;sync kubelet loop is exited&quot;</span>)</span><br><span class="line">			<span class="keyword">return</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>再找一下事件触发是在哪里，最后发现在 <code>pleg</code> 文件中，通过 watch cgroup 下文件的删除和创建事件触发的。</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">func</span> <span class="params">(p *pleg)</span></span> Run(stopCh &lt;-<span class="keyword">chan</span> <span class="keyword">struct</span>&#123;&#125;) <span class="type">error</span> &#123;</span><br><span class="line"></span><br><span class="line">	qosClasses := []corev1.PodQOSClass&#123;corev1.PodQOSGuaranteed, corev1.PodQOSBurstable, corev1.PodQOSBestEffort&#125;</span><br><span class="line">	<span class="keyword">for</span> _, qosClass := <span class="keyword">range</span> qosClasses &#123;</span><br><span class="line">		<span class="comment">// watch cgroup 文件的创建和删除</span></span><br><span class="line">		cgroupPath := getWatchCgroupPath(p.cgroupRootPath, qosClass)</span><br><span class="line">		err := p.podWatcher.AddWatch(cgroupPath)</span><br><span class="line">  &#125;</span><br><span class="line">	....</span><br><span class="line"></span><br><span class="line">	<span class="keyword">go</span> p.runEventHandler(stopCh)</span><br><span class="line"></span><br><span class="line">	<span class="keyword">for</span> &#123;</span><br><span class="line">		<span class="keyword">select</span> &#123;</span><br><span class="line">		<span class="keyword">case</span> evt := &lt;-p.podWatcher.Event():</span><br><span class="line">			<span class="keyword">switch</span> TypeOf(evt) &#123;</span><br><span class="line">			<span class="keyword">case</span> DirCreated:</span><br><span class="line">				basename := filepath.Base(evt.Name)</span><br><span class="line">				podID, err := koordletutil.ParsePodID(basename)</span><br><span class="line">				<span class="keyword">if</span> err != <span class="literal">nil</span> &#123;</span><br><span class="line">					klog.Infof(<span class="string">&quot;skip %v added event which is not a pod&quot;</span>, evt.Name)</span><br><span class="line">					<span class="keyword">continue</span></span><br><span class="line">				&#125;</span><br><span class="line">				<span class="comment">// 触发 pod 创建事件</span></span><br><span class="line">				p.events &lt;- newPodEvent(podID, podAdded)</span><br><span class="line">        ...</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>有上诉代码的跟踪发现 koordlet 内部 Pod 生命周期的 Hook 是通过定时任务和 watch cgroup 文件触发的。</p>
+<h2 id="slo-controller"><a href="#slo-controller" class="headerlink" title="slo-controller"></a>slo-controller</h2><p>这个组件的作用在于根据配置和上报的监控指标计算出 BE 资源的可使用量。<br><img src="/../images/koordinator/slo-controller1.jpg" alt="koord-hook"></p>
+<ol>
+<li><p>koordlet 通过 CRD NodeMetric 的形式每分钟上报 Pod、Node 的 cpu、mem 指标，之前分析的流程；</p>
+</li>
+<li><p>SLO Controller 监听到 NodeMetric 发生变动，开始更新 BE 之前；</p>
+</li>
+<li><p>根据公式 <code>Node(BE).Alloc = Node.Total - Node.Reserved - System.Used - Pod(LS).Used</code> 计算出新的 BE 资源；</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Node(BE).Alloc = Node.Total - Node.Reserved - System.Used - Pod(LS).Used</span></span><br><span class="line">batchAllocatableByUsage := quotav1.Max(quotav1.Subtract(quotav1.Subtract(quotav1.Subtract(</span><br><span class="line">	nodeAllocatable, nodeReserve), systemUsed), podLSUsed), util.NewZeroResourceList())</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>将计算出新的 BE 之前更新到 Node Status 中。<br><img src="/../images/koordinator/slo-controller2.png" alt="koord-hook"></p>
+</li>
+</ol>
+<h2 id="scheduler"><a href="#scheduler" class="headerlink" title="scheduler"></a>scheduler</h2><p>scheduler 通过 <a class="link"   target="_blank" rel="noopener" href="https://kubernetes.io/zh-cn/docs/concepts/scheduling-eviction/scheduling-framework/" >scheduling-framework<i class="fas fa-external-link-alt"></i></a> 机制对 Pod 的调度进行拓展，包括以下插件</p>
+<ol>
+<li>LoadAwareScheduling：按照节点实际负载进行调度，平衡集群资源使用率；</li>
+<li>NodeNUMAResource： 按照节点 CPU 的 NUMA 结构进行调度；</li>
+<li>Reservation： 资源预留，在创建 Pod 之前提前为 Pod 预留资源；</li>
+<li>BatchResourceFit：将 BE 资源不足的节点过滤出去；</li>
+<li>ElasticQuota：弹性配额，管理共享集群中不同用户资源使用的能力;</li>
+<li>DeviceShare: 可以根据拓展设备进行调度，如 gpu；</li>
+<li>Coscheduling: 批量调度，all-or-nothing；</li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>Koordinator 框架结构比较清晰，都是通过 Kubernetes 拓展点实现的功能，对 Kubernetes 无侵入性，从代码质量和功能来说都是比较优秀的，是一个值得学习的框架。</p>
+
+        </div>
+
+        
+
+        
+            <ul class="post-tags-box">
+                
+                    <li class="tag-item">
+                        <a href="/tags/%E4%BA%91%E5%8E%9F%E7%94%9F/">#云原生</a>&nbsp;
+                    </li>
+                
+                    <li class="tag-item">
+                        <a href="/tags/kubernetes/">#kubernetes</a>&nbsp;
+                    </li>
+                
+            </ul>
+        
+
+        
+            <div class="article-nav">
+                
+                
+                    <div class="article-next">
+                        <a class="next"
+                           rel="next"
+                           href="/2022/05/18/Nacos%E9%95%BF%E8%BF%9E%E6%8E%A5%E6%8E%A8%E9%80%81%E6%A8%A1%E5%9E%8B%E8%A7%A3%E6%9E%90/"
+                        >
+                            <span class="title flex-center">
+                                <span class="post-nav-title-item">Nacos 长连接推送模型解析</span>
+                                <span class="post-nav-item">Next posts</span>
+                            </span>
+                            <span class="right arrow-icon flex-center">
+                              <i class="fas fa-chevron-right"></i>
+                            </span>
+                        </a>
+                    </div>
+                
+            </div>
+        
+
+        
+            <div class="comment-container">
+                <div class="comments-container">
+    <div id="comment-anchor"></div>
+    <div class="comment-area-title">
+        <i class="fas fa-comments">&nbsp;Comments</i>
+    </div>
+    
+
+        
+            
+    <div id="gitalk-container"></div>
+    <script 
+            src="//cdn.jsdelivr.net/npm/gitalk/dist/gitalk.min.js"></script>
+    <script >
+
+        function loadGitalk() {
+            let __gitalk__pathname = decodeURI(location.pathname);
+            const __gitalk__pathnameLength = __gitalk__pathname.length;
+            const __gitalk__pathnameMaxLength = 50;
+            if (__gitalk__pathnameLength > __gitalk__pathnameMaxLength) {
+                __gitalk__pathname = __gitalk__pathname.substring(0, __gitalk__pathnameMaxLength - 3) + '...';
+            }
+
+            try {
+                Gitalk && new Gitalk({
+                    clientID: '7fa5bd7f3f8f0e6087b1',
+                    clientSecret: '5efd51d5e51729d06fba43ea358296063b47ed34',
+                    repo: 'haoyann.github.io',
+                    owner: 'haoyann',
+                    admin: ['haoyann'],
+                    id: __gitalk__pathname,
+                    language: 'en'
+                }).render('gitalk-container');
+
+            } catch (e) {
+                window.Gitalk = null;
+            }
+        }
+
+        if ('false') {
+            const loadGitalkTimeout = setTimeout(() => {
+                loadGitalk();
+                clearTimeout(loadGitalkTimeout);
+            }, 1000);
+        } else {
+            window.addEventListener('DOMContentLoaded', loadGitalk);
+        }
+    </script>
+
+
+
+        
+    
+</div>
+
+            </div>
+        
+    </div>
+</div>
+
+
+                
+            </div>
+
+        </div>
+
+        <div class="page-main-content-bottom">
+            <footer class="footer">
+    <div class="info-container">
+        <div class="copyright-info info-item">
+            &copy;
+            
+              <span>2020</span>
+              -
+            
+            2023&nbsp;<i class="fas fa-heart icon-animate"></i>&nbsp;<a href="/">haoyann</a>
+        </div>
+        
+        <div class="theme-info info-item">
+            Powered by <a target="_blank" href="https://hexo.io">Hexo</a>&nbsp;|&nbsp;Theme&nbsp;<a class="theme-version" target="_blank" href="https://github.com/XPoet/hexo-theme-keep">Keep v3.4.5</a>
+        </div>
+        
+        
+    </div>
+</footer>
+
+        </div>
+    </div>
+
+    
+        <div class="post-tools">
+            <div class="post-tools-container">
+    <ul class="tools-list">
+        <!-- TOC aside toggle -->
+        
+            <li class="tools-item page-aside-toggle">
+                <i class="fas fa-outdent"></i>
+            </li>
+        
+
+        <!-- go comment -->
+        
+            <li class="go-comment">
+                <i class="fas fa-comment"></i>
+            </li>
+        
+    </ul>
+</div>
+
+        </div>
+    
+
+    <div class="right-bottom-side-tools">
+        <div class="side-tools-container">
+    <ul class="side-tools-list">
+        <li class="tools-item tool-font-adjust-plus flex-center">
+            <i class="fas fa-search-plus"></i>
+        </li>
+
+        <li class="tools-item tool-font-adjust-minus flex-center">
+            <i class="fas fa-search-minus"></i>
+        </li>
+
+        <li class="tools-item tool-expand-width flex-center">
+            <i class="fas fa-arrows-alt-h"></i>
+        </li>
+
+        <li class="tools-item tool-dark-light-toggle flex-center">
+            <i class="fas fa-moon"></i>
+        </li>
+
+        <!-- rss -->
+        
+
+        
+            <li class="tools-item tool-scroll-to-top flex-center">
+                <i class="fas fa-arrow-up"></i>
+            </li>
+        
+
+        <li class="tools-item tool-scroll-to-bottom flex-center">
+            <i class="fas fa-arrow-down"></i>
+        </li>
+    </ul>
+
+    <ul class="exposed-tools-list">
+        <li class="tools-item tool-toggle-show flex-center">
+            <i class="fas fa-cog fa-spin"></i>
+        </li>
+        
+    </ul>
+</div>
+
+    </div>
+
+    
+        <aside class="page-aside">
+            <div class="post-toc-wrap">
+    <div class="post-toc">
+        <ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A6%82%E5%86%B5"><span class="nav-text">概况</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9E%B6%E6%9E%84"><span class="nav-text">架构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Koordinator-Scheduler"><span class="nav-text">Koordinator Scheduler</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Koordinator-Manager"><span class="nav-text">Koordinator Manager</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Koordlet"><span class="nav-text">Koordlet</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#QoS"><span class="nav-text">QoS</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%AE%9A%E4%B9%89"><span class="nav-text">定义</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Koordinator-QoS%E4%B8%8E-Kubernetes-QoS-%E7%9A%84%E5%AF%B9%E6%AF%94"><span class="nav-text">Koordinator QoS与 Kubernetes QoS 的对比</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85"><span class="nav-text">安装</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E6%9E%90"><span class="nav-text">分析</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#koordlet"><span class="nav-text">koordlet</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8"><span class="nav-text">启动</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#collectorService"><span class="nav-text">collectorService</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Pod%E6%8C%87%E6%A0%87%E6%94%B6%E9%9B%86%E6%B5%81%E7%A8%8B"><span class="nav-text">Pod指标收集流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%8C%87%E6%A0%87%E4%B8%8A%E6%8A%A5%E6%B5%81%E7%A8%8B"><span class="nav-text">指标上报流程</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#resManagerService"><span class="nav-text">resManagerService</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#cpu-%E5%8E%8B%E5%88%B6"><span class="nav-text">cpu 压制</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%A9%B1%E9%80%90"><span class="nav-text">驱逐</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#runtimeHook"><span class="nav-text">runtimeHook</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#RuntimeProxy"><span class="nav-text">RuntimeProxy</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Watch-And-Sync"><span class="nav-text">Watch And Sync</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#slo-controller"><span class="nav-text">slo-controller</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#scheduler"><span class="nav-text">scheduler</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-text">总结</span></a></li></ol>
+    </div>
+</div>
+        </aside>
+    
+
+    <div class="image-viewer-container">
+    <img src="">
+</div>
+
+
+    
+
+</main>
+
+
+
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/main.js"></script>
+
+<script src="/js/header-shrink.js"></script>
+
+<script src="/js/back2top.js"></script>
+
+<script src="/js/dark-light-toggle.js"></script>
+
+
+
+
+
+    
+<script src="/js/code-copy.js"></script>
+
+
+
+
+
+<div class="post-scripts">
+    
+        
+<script src="/js/left-side-toggle.js"></script>
+
+<script src="/js/libs/anime.min.js"></script>
+
+<script src="/js/toc.js"></script>
+
+    
+</div>
+
+
+
+</body>
+</html>
